@@ -1,0 +1,6 @@
+# ignoring the builds
+target/
+
+# ignoring the image files
+*.ppm
+
