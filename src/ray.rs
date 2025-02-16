@@ -48,7 +48,7 @@ impl Ray {
     pub fn ray_color(r: Ray) -> Color {
         let origin = Point3::new(0.0, 0.0, -1.0);
 
-        let t = r.hit_sphere(origin, 0.5);
+        let t = r.hit_sphere(origin, 0.45);
 
         if t > 0.0 {
             let N = Vec3::unit_vector(r.at(t) - Vec3::from_point(origin));

@@ -22,16 +22,16 @@ use camera::Camera;
 fn main() {
     let mut cam = Camera::default();
 
-    cam.set_aspect(1.0, 1.0);
+    cam.set_aspect(16.0, 9.0);
     cam.set_width(2.0);
 
-    let img_width: i32 = 2048;
+    let img_width: i32 = 1024;
     let img_height: i32 = (img_width as f64 / cam.aspect_ratio).round() as i32;
 
     let mut img = Image::new(img_width as usize, img_height as usize); 
 
     let viewport_u = Vec3::new(cam.viewport_width, 0.0, 0.0);
-    let viewport_v = Vec3::new(0.0, -cam.viewport_width, 0.0);
+    let viewport_v = Vec3::new(0.0, -cam.viewport_height, 0.0);
 
     let pixel_delta_u = viewport_u / img.cols as f64;
     let pixel_delta_v = viewport_v / img.rows as f64;
