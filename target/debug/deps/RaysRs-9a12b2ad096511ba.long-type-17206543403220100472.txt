@@ -1,0 +1,1 @@
+Map<std::slice::Iter<'_, Color>, {closure@src/main.rs:33:41: 33:45}>
