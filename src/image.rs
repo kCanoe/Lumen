@@ -22,10 +22,12 @@ impl Image {
         self.pixels[row][col] = value;
     }
 
+    #[allow(dead_code)]
     pub fn get(&self, row: usize, col: usize) -> Option<&Color> {
         self.pixels.get(row).and_then(|r| r.get(col))
     }
 
+    #[allow(dead_code)]
     pub fn get_mut(&mut self, row: usize, col: usize) -> Option<&mut Color> {
         self.pixels.get_mut(row).and_then(|r| r.get_mut(col))
     }

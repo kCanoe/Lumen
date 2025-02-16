@@ -21,13 +21,6 @@ impl Ray {
         }
     }
 
-    pub fn from_vals(ox: f64, oy: f64, oz: f64, dx: f64, dy: f64, dz: f64) -> Self {
-        Ray {
-            origin: Point3 { x: ox, y: oy, z: oz },
-            direction: Vec3 { x: dx, y: dy, z: dz },
-        }
-    }
-
     pub fn at(&self, t: f64) -> Point3 {
         self.origin + t * self.direction
     }

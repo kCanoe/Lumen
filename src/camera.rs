@@ -26,6 +26,7 @@ impl Camera {
         }
     }
 
+    #[allow(dead_code)]
     pub fn new(
         aspect_ratio: f64,
         viewport_width: f64,
@@ -46,6 +47,7 @@ impl Camera {
         }
     }
 
+    #[allow(dead_code)]
     pub fn set_position(&mut self, x: f64, y: f64, z: f64) {
         self.position = Point3::new(x, y, z);
     }
@@ -59,6 +61,7 @@ impl Camera {
         self.viewport_height = new_width / self.aspect_ratio;
     }
 
+    #[allow(dead_code)]
     pub fn set_viewport_height(&mut self, new_height: f64) {
         self.viewport_height = new_height;
         self.viewport_width = new_height * self.aspect_ratio;
@@ -69,6 +72,7 @@ impl Camera {
         self.image_height = (new_width as f64 / self.aspect_ratio).round() as i32;
     }
 
+    #[allow(dead_code)]
     pub fn set_image_height(&mut self, new_height: i32) {
         self.image_height = new_height;
         self.image_width = (new_height as f64 * self.aspect_ratio).round() as i32;
