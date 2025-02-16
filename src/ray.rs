@@ -33,15 +33,15 @@ impl Ray {
         let oc = Vec3::from_point(center - self.origin);
         
         let a = self.direction * self.direction;
-        let b = -2.0 * (self.direction * oc);
+        let h = self.direction * oc;
         let c = (oc * oc) - (radius * radius); 
-
-        let discriminant = (b * b) - (4.0 * a * c); 
+        let discriminant = h*h - a*c; 
         
         if discriminant < 0.0 {
             return -1.0;
         } else {
-            return -(-b - discriminant.sqrt()) / (2.0 * a);
+            let t: f64 = (h - discriminant.sqrt()) /  a;
+            return t;
         }
     } 
 
@@ -51,8 +51,8 @@ impl Ray {
         let t = r.hit_sphere(origin, 0.5);
 
         if t > 0.0 {
-            let N = -1.0 * Vec3::unit_vector(r.at(t) - Vec3::from_point(origin));
-            let normal_shade = Color::new(-N.x+1.0, -N.y+1.0, N.z+1.0);
+            let N = Vec3::unit_vector(r.at(t) - Vec3::from_point(origin));
+            let normal_shade = Color::new(N.x+1.0, N.y+1.0, N.z+1.0);
             return 0.5 * normal_shade;
         }
 

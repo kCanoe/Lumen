@@ -25,7 +25,7 @@ fn main() {
     cam.set_aspect(1.0, 1.0);
     cam.set_width(2.0);
 
-    let img_width: i32 = 1024;
+    let img_width: i32 = 2048;
     let img_height: i32 = (img_width as f64 / cam.aspect_ratio).round() as i32;
 
     let mut img = Image::new(img_width as usize, img_height as usize); 
@@ -49,7 +49,7 @@ fn main() {
                 + (i as f64 * pixel_delta_u) + (j as f64 * pixel_delta_v);
 
             let ray_direction = Vec3::from_point(pixel_center - cam.position);
-            let r = Ray::new(pixel_center, ray_direction);
+            let r = Ray::new(cam.position, ray_direction);
             
             let pixel_color = Ray::ray_color(r); 
 
