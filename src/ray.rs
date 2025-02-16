@@ -4,66 +4,13 @@ use crate::Point3;
 use crate::Vec3;
 use crate::Color;
 
+use crate::Sphere;
+use crate::HitRecord;
+use crate::hit::Hittable;
+
 pub struct Ray {
     pub origin: Point3,
     pub direction: Vec3,
-}
-
-pub struct HitRecord {
-    pub point: Point3,
-    pub normal: Vec3,
-    pub t: f64,
-}
-
-pub struct Sphere {
-    pub radius: f64,
-    pub center: Point3,
-}
-
-impl HitRecord {
-    pub fn new() -> Self {
-        HitRecord {
-            point: Point3::new(0.0, 0.0, 0.0),
-            normal: Vec3::new(1.0, 1.0, 1.0),
-            t: 0.0,
-        }
-    }
-}
-
-impl Sphere {
-    pub fn new(radius: f64, cx: f64, cy: f64, cz: f64) -> Self {
-        Sphere {
-            radius: radius,
-            center: Point3::new(cx, cy, cz),
-        } 
-    }
-}
-
-trait Hittable {
-    fn hit(&self, ray: &Ray, record: &mut HitRecord) -> bool;
-}
-
-impl Hittable for Sphere {
-    fn hit(&self, ray: &Ray, record: &mut HitRecord) -> bool {
-        let oc = Vec3::from_point(self.center - ray.origin);
-        
-        let a = ray.direction * ray.direction;
-        let h = ray.direction * oc;
-        let c = (oc * oc) - (self.radius * self.radius); 
-        let discriminant = h*h - a*c; 
-
-        if discriminant < 0.0 {
-            return false;
-        }
-
-        let root = (h - discriminant.sqrt()) / a;
-
-        record.t = root;
-        record.point = ray.at(root);
-        record.normal = Vec3::from_point((ray.at(root) - self.center) / self.radius);
-
-        return true;
-    }
 }
 
 impl Ray {
@@ -94,8 +41,7 @@ impl Ray {
 
         match hit {
             true => {
-                let N: Vec3 = 0.5 * (record.normal + Vec3::new(1.0, 1.0, 1.0));
-                Color::new(N.x, N.y, N.z)
+                Color::from_vec3(0.5 * (record.normal + Vec3::new(1.0, 1.0, 1.0)))
             }
             false => {
                 let unit_direction = Vec3::unit_vector(ray.direction);

@@ -9,7 +9,7 @@ pub struct Image {
 }
 
 impl Image {
-    pub fn new(width: usize, height: usize) -> Self {
+    pub fn new(width: i32, height: i32) -> Self {
         let (rows, cols) = (height as usize, width as usize);
         Image {
             pixels: vec![vec![Color::new(0.0, 0.0, 0.0); cols]; rows],

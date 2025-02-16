@@ -1,6 +1,7 @@
 use std::fmt;
 use std::ops::{Add, Mul};
 
+use crate::Vec3;
 
 #[derive(Clone, Copy)]
 pub struct Color {
@@ -14,9 +15,18 @@ impl Color {
         Color { r, g, b }
     }
 
+    pub fn from_vec3(vector: Vec3) -> Self {
+        Color { 
+            r: Color::clamp(vector.x),
+            g: Color::clamp(vector.y),
+            b: Color::clamp(vector.z),
+        }
+    }
+
     fn clamp(value: f64) -> f64 {
         value.max(0.0).min(1.0)
     }
+
 }
 
 impl fmt::Display for Color {
