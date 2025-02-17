@@ -1,9 +1,9 @@
 use rand::Rng;
 use rand::distributions::{Distribution, Uniform};
 
-const PI = f64::consts::PI;
+const PI: f64 = std::f64::consts::PI;
 
-fn degrees_to_radians(theta: f64) ->  f64 {
+pub fn degrees_to_radians(theta: f64) ->  f64 {
     theta * PI / 180.0
 }
 

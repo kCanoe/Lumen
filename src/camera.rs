@@ -4,6 +4,7 @@ use crate::Color;
 use crate::Ray;
 use crate::Image;
 use crate::ObjectList;
+use crate::utility::random;
 
 pub struct Camera {
     pub aspect_ratio: f64,
@@ -137,9 +138,16 @@ impl Camera {
             + 0.5 * (self.pixel_delta_u + self.pixel_delta_v);
     }
 
+    pub fn sample_square() -> Vec3 {
+        Vec3::new(random() - 0.5, random() - 0.5, 0.0)
+    }
+
     pub fn get_ray(&self, i: usize, j: usize) -> Ray {
+        let offset: Vec3 = Self::sample_square();
+
         let pixel_center = self.pixel_origin
-            + (i as f64 * self.pixel_delta_u) + (j as f64 * self.pixel_delta_v);
+            + (i as f64 + offset.x) * self.pixel_delta_u
+            + (j as f64 + offset.y) * self.pixel_delta_v;
 
         let ray_direction = Vec3::from_point(pixel_center - self.position);
         
