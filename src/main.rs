@@ -12,6 +12,7 @@ use hit::HitRecord;
 
 mod shapes;
 use shapes::Sphere;
+use shapes::ObjectList;
 
 mod ray;
 use ray::Ray;
@@ -28,8 +29,17 @@ fn main() {
     cam.set_aspect(16.0, 9.0);
     cam.set_viewport_width(2.0);
     cam.set_image_width(1024);
+    cam.initialize();
 
-    let image = cam.render();
+    let mut world = ObjectList::new();
+    
+    let sphere = Sphere::new(0.2, 0.0, 0.0, -1.0);
+    let ground = Sphere::new(1000.0, 0.0, -101.5, -1.0);
+
+    world.add(&sphere);
+    world.add(&ground);
+
+    let image = cam.render(&world);
 
     println!("{}", image);
 }

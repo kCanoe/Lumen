@@ -4,9 +4,10 @@ use crate::Point3;
 use crate::Vec3;
 use crate::Color;
 
-use crate::Sphere;
 use crate::HitRecord;
+use crate::ObjectList;
 use crate::hit::Hittable;
+
 
 pub struct Ray {
     pub origin: Point3,
@@ -25,12 +26,10 @@ impl Ray {
         self.origin + t * self.direction
     }
 
-    pub fn ray_color(ray: Ray) -> Color {
-        let sphere = Sphere::new(0.4, 0.0, 0.0, -1.0);
-
+    pub fn ray_color(ray: Ray, objects: &ObjectList) -> Color {
         let mut record = HitRecord::new();
         
-        let hit: bool = sphere.hit(&ray, &mut record);
+        let hit: bool = objects.hit(&ray, 0.0, f64::INFINITY, &mut record);
 
         match hit {
             true => {
