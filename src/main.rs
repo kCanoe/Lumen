@@ -36,7 +36,8 @@ fn main() {
 
     let mut world = ObjectList::new();
 
-    world.add(Box::new(Sphere::new(0.4, 0.0, 0.0, -1.0)));
+    world.add(Box::new(Sphere::new(0.3, 0.3, 0.0, -1.0)));
+    world.add(Box::new(Sphere::new(0.2, -0.3, -0.1, -1.0)));
     world.add(Box::new(Sphere::new(100.0, 0.0, -100.5, -1.0)));
 
     let image = cam.render(&world);
