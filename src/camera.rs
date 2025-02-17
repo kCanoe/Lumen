@@ -143,9 +143,7 @@ impl Camera {
         dist: &Uniform<f64>,
         rng: &mut ThreadRng
     ) -> Ray {
-        let r1: f64 = random(&dist, rng) - 0.5;
-        let r2: f64 = random(&dist, rng) - 0.5;
-        let offset = Vec3::new(r1, r2, 0.0);
+        let offset = Vec3::new(dist.sample(rng) - 0.5, dist.sample(rng) - 0.5, 0.0);
 
         let pixel_center = self.pixel_origin
             + (i as f64 + offset.x) * self.pixel_delta_u
@@ -154,6 +152,26 @@ impl Camera {
         let ray_direction = Vec3::from_point(pixel_center - self.position);
         
         Ray::new(self.position, ray_direction)
+    }
+
+    pub fn process_col(
+        &self,
+        col: usize,
+        rows: usize,
+        objects: &ObjectList,
+    ) -> Vec<Color> {
+        let dist = Uniform::new(0.0, 1.0);
+        let mut rng = rand::thread_rng();
+        
+        (0..rows).map(|row| {
+            let mut pixel_color = Color::new(0.0, 0.0, 0.0);
+            for _ in 0..self.samples {
+                let r = self.get_ray(col, row, &dist, &mut rng);
+                pixel_color = pixel_color + Ray::ray_color(r, objects); 
+            }
+            pixel_color * self.sample_scale
+        })
+        .collect()
     }
 
     pub fn render(&self, objects: &ObjectList) -> Image { 
@@ -172,6 +190,23 @@ impl Camera {
                 image.set(j, i, pixel_color * self.sample_scale);
             }
         }
+        image
+    }
+
+    pub fn render_parallel(&self, objects: &ObjectList) -> Image {
+        let mut image = Image::new(self.image_width, self.image_height);
+        let mut pixels: Vec<Vec<Color>> = Vec::with_capacity(image.cols);
+
+        for col in 0..image.cols {
+            pixels.push(self.process_col(col, image.rows, objects)); 
+        }
+         
+        for col in 0..image.cols {
+            for row in 0..image.rows {
+                image.set(row, col, pixels[col][row]);
+            }
+        }
+
         image
     }
 }

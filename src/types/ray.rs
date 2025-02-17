@@ -10,6 +10,10 @@ pub struct Ray {
 }
 
 impl Ray {
+    const IDENTITY: Vec3 = Vec3 { x: 1.0, y: 1.0, z: 1.0 };
+    const WHITE: Color = Color { r: 1.0, g: 1.0, b: 1.0 };
+    const SKY: Color = Color { r: 0.5, g: 0.7, b: 1.0 };
+
     pub fn new(origin: Point3, direction: Vec3) -> Self {
         Ray {
             origin: origin,
@@ -30,14 +34,13 @@ impl Ray {
 
         match hit {
             true => {
-                Color::from_vec3(0.5 * (record.normal + Vec3::new(1.0, 1.0, 1.0)))
+
+                Color::from_vec3(0.5 * (record.normal + Self::IDENTITY))
             }
             false => {
                 let unit_direction = Vec3::unit_vector(ray.direction);
                 let a: f64 = 0.5 * (unit_direction.y + 1.0);
-                let start_value = Color::new(1.0, 1.0, 1.0);
-                let end_value = Color::new(0.5, 0.7, 1.0); 
-                (1.0-a) * start_value + a * end_value
+                (1.0-a) * Self::SKY + a * Self::WHITE
             }
         }
     }

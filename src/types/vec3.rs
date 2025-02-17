@@ -3,6 +3,9 @@ use std::ops::{Add, Sub, Mul, Div};
 
 use crate::types::Point3;
 
+use rand::rngs::ThreadRng;
+use rand::distributions::{Distribution, Uniform};
+
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Vec3 {
     pub x: f64,
@@ -22,6 +25,29 @@ impl Vec3 {
     pub fn unit_vector(v: Vec3) -> Self {
         let mg = (v.x.powi(2) + v.y.powi(2) + v.z.powi(2)).sqrt();
         Vec3 { x: v.x / mg, y: v.y / mg, z: v.z / mg}
+    }
+
+    pub fn random_vector() -> Self {
+        let dist = Uniform::new(0.0, 1.0);
+        let mut rng = rand::thread_rng();   
+        Vec3 {
+            x: dist.sample(&mut rng),
+            y: dist.sample(&mut rng),
+            z: dist.sample(&mut rng),
+        }
+    }
+
+    pub fn random_unit_vector() -> Self {
+        Self::unit_vector(Self::random_vector())
+    }
+
+    pub fn random_on_hemisphere(normal: Vec3) -> Self {
+        let on_unit_sphere = Self::random_unit_vector();
+        
+        match on_unit_sphere * normal > 0.0 {
+            true => on_unit_sphere,
+            false => -1.0 * on_unit_sphere,
+        }
     }
 }
 

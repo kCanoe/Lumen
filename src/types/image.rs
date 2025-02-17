@@ -3,7 +3,7 @@ use std::fmt;
 use crate::types::Color;
 
 pub struct Image {
-    pixels: Vec<Vec<Color>>,
+    pub pixels: Vec<Vec<Color>>,
     pub rows: usize,
     pub cols: usize,
 }
