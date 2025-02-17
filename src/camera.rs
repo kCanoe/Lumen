@@ -1,3 +1,6 @@
+use rand::rngs::ThreadRng;
+use rand::distributions::{Distribution, Uniform};
+
 use crate::types::*;
 use crate::utils::*;
 
@@ -133,12 +136,16 @@ impl Camera {
             + 0.5 * (self.pixel_delta_u + self.pixel_delta_v);
     }
 
-    pub fn sample_square() -> Vec3 {
-        Vec3::new(random() - 0.5, random() - 0.5, 0.0)
-    }
-
-    pub fn get_ray(&self, i: usize, j: usize) -> Ray {
-        let offset: Vec3 = Self::sample_square();
+    pub fn get_ray(
+        &self,
+        i: usize,
+        j: usize,
+        dist: &Uniform<f64>,
+        rng: &mut ThreadRng
+    ) -> Ray {
+        let r1: f64 = random(&dist, rng) - 0.5;
+        let r2: f64 = random(&dist, rng) - 0.5;
+        let offset = Vec3::new(r1, r2, 0.0);
 
         let pixel_center = self.pixel_origin
             + (i as f64 + offset.x) * self.pixel_delta_u
@@ -149,20 +156,22 @@ impl Camera {
         Ray::new(self.position, ray_direction)
     }
 
-    pub fn render(&self, objects: &ObjectList) -> Image {
+    pub fn render(&self, objects: &ObjectList) -> Image { 
         let mut image = Image::new(self.image_width, self.image_height); 
+
+        let dist = Uniform::new(0.0, 1.0);
+        let mut rng = rand::thread_rng();
 
         for i in 0..image.cols {
             for j in 0..image.rows {
                 let mut pixel_color = Color::new(0.0, 0.0, 0.0);
                 for _ in 0..self.samples {
-                    let r = self.get_ray(i, j);
+                    let r = self.get_ray(i, j, &dist, &mut rng);
                     pixel_color = pixel_color + Ray::ray_color(r, objects); 
                 }
                 image.set(j, i, pixel_color * self.sample_scale);
             }
         }
-
         image
     }
 }
