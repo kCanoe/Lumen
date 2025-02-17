@@ -1,10 +1,5 @@
-use crate::Vec3;
-use crate::Point3;
-use crate::Color;
-use crate::Ray;
-use crate::Image;
-use crate::ObjectList;
-use crate::utility::random;
+use crate::types::*;
+use crate::utils::*;
 
 pub struct Camera {
     pub aspect_ratio: f64,

@@ -1,7 +1,5 @@
-use crate::Vec3;
-use crate::Point3;
-use crate::Ray;
-use crate::Interval;
+use crate::types::*;
+
 use crate::hit::Hittable;
 use crate::HitRecord;
 
@@ -85,7 +83,4 @@ impl Hittable for ObjectList {
         hit_anything
     }
 }
-
-
-
 

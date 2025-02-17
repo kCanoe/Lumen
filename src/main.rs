@@ -1,29 +1,8 @@
-mod utility;
+mod types;
+use types::*;
 
-mod vec3;
-use vec3::Vec3;
-
-mod point3;
-use point3::Point3;
-
-mod color;
-use color::Color;
-
-mod interval;
-use interval::Interval;
-
-mod hit;
-use hit::HitRecord;
-
-mod shapes;
-use shapes::Sphere;
-use shapes::ObjectList;
-
-mod ray;
-use ray::Ray;
-
-mod image;
-use image::Image;
+mod utils;
+use utils::*;
 
 mod camera;
 use camera::Camera;

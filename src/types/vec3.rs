@@ -1,32 +1,43 @@
 use std::fmt;
 use std::ops::{Add, Sub, Mul, Div};
 
-use crate::Vec3;
+use crate::types::Point3;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub struct Point3 {
+pub struct Vec3 {
     pub x: f64,
     pub y: f64,
     pub z: f64,
 }
 
-impl Point3 {
+impl Vec3 {
     pub fn new(x: f64, y: f64, z: f64) -> Self {
-        Point3 { x: x, y: y, z: z }
+        Vec3 { x: x, y: y, z: z }
+    }
+
+    pub fn from_point(p: Point3) -> Self {
+        Vec3 { x: p.x, y: p.y, z: p.z }
+    }
+
+    pub fn unit_vector(v: Vec3) -> Self {
+        let mg = (v.x.powi(2) + v.y.powi(2) + v.z.powi(2)).sqrt();
+        Vec3 { x: v.x / mg, y: v.y / mg, z: v.z / mg}
     }
 }
 
-impl fmt::Display for Point3 {
+impl fmt::Display for Vec3 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "({}, {}, {})", self.x, self.y, self.z)
     }
 }
 
-impl Add for Point3 {
+// operation implementations
+
+impl Add for Vec3 {
     type Output = Self;
 
     fn add(self, other: Self) -> Self::Output {
-        Point3 {
+        Vec3 {
             x: self.x + other.x,
             y: self.y + other.y,
             z: self.z + other.z,
@@ -34,24 +45,11 @@ impl Add for Point3 {
     }
 }
 
-impl Add<Vec3> for Point3 {
-    type Output = Self;
-
-    fn add(self, vector: Vec3) -> Self::Output {
-        Point3 {
-            x: self.x + vector.x,
-            y: self.y + vector.y,
-            z: self.z + vector.z,
-        } 
-    }
-}
-
-
-impl Sub for Point3 {
+impl Sub for Vec3 {
     type Output = Self;
 
     fn sub(self, other: Self) -> Self::Output {
-        Point3 {
+        Vec3 {
             x: self.x - other.x,
             y: self.y - other.y,
             z: self.z - other.z,
@@ -59,23 +57,23 @@ impl Sub for Point3 {
     }
 }
 
-impl Sub<Vec3> for Point3 {
-    type Output = Self;
+// dot product between two Vec3
 
-    fn sub(self, vector: Vec3) -> Self::Output {
-        Point3 {
-            x: self.x - vector.x,
-            y: self.y - vector.y,
-            z: self.z - vector.z,
-        } 
+impl Mul for Vec3 {
+    type Output = f64;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        self.x * rhs.x + self.y * rhs.y + self.z * rhs.z 
     }
 }
 
-impl Mul<f64> for Point3 {
+// scalar multiplication and division of Vec3
+
+impl Mul<f64> for Vec3 {
     type Output = Self;
 
     fn mul(self, k: f64) -> Self::Output {
-        Point3 {
+        Vec3 {
             x: self.x * k,
             y: self.y * k,
             z: self.z * k,
@@ -83,26 +81,29 @@ impl Mul<f64> for Point3 {
     }
 }
 
-impl Mul<Point3>  for f64 {
-    type Output = Point3;
+impl Mul<Vec3> for f64 {
+    type Output = Vec3;
 
-    fn mul(self, point: Point3) -> Self::Output {
-        Point3 {
-            x: self * point.x,
-            y: self * point.y,
-            z: self * point.z,
+    fn mul(self, vector: Vec3) -> Self::Output {
+        Vec3 {
+            x: self * vector.x,
+            y: self * vector.y,
+            z: self * vector.z,
         }
     }
 }
 
-impl Div<f64> for Point3 {
+impl Div<f64> for Vec3 {
     type Output = Self;
 
     fn div(self, k: f64) -> Self::Output {
-        Point3 {
+        Vec3 {
             x: self.x / k,
             y: self.y / k,
             z: self.z / k,
         }
     }
 }
+
+
+

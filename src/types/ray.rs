@@ -1,14 +1,8 @@
 use std::fmt;
 
-use crate::Point3;
-use crate::Vec3;
-use crate::Color;
-use crate::Interval;
+use crate::types::{Point3, Vec3, Color, Interval};
 
-use crate::HitRecord;
-use crate::ObjectList;
-use crate::hit::Hittable;
-
+use crate::utils::{HitRecord, Hittable, ObjectList};
 
 pub struct Ray {
     pub origin: Point3,

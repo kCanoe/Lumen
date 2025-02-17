@@ -1,7 +1,4 @@
-use crate::Vec3;
-use crate::Point3;
-use crate::Ray;
-use crate::Interval;
+use crate::types::*;
 
 #[derive(Clone, Copy)]
 pub struct HitRecord {

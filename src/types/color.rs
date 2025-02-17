@@ -1,7 +1,7 @@
 use std::fmt;
 use std::ops::{Add, Mul};
 
-use crate::Vec3;
+use crate::types::Vec3;
 
 #[derive(Clone, Copy)]
 pub struct Color {
