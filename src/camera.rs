@@ -19,6 +19,7 @@ pub struct Camera {
     pub position: Point3,
     pub samples: u32,
     pub sample_scale: f64,
+    pub max_depth: i32,
 }
 
 impl Camera {
@@ -38,6 +39,7 @@ impl Camera {
             position: Point3 { x: 0.0, y: 0.0, z: 0.0 },
             samples: 1,
             sample_scale: 1.0,
+            max_depth: 10,
         }
     }
 
@@ -57,6 +59,7 @@ impl Camera {
         position: Point3,
         samples: u32,
         sample_scale: f64,
+        max_depth: i32,
     ) -> Self {
         Camera {
             aspect_ratio: aspect_ratio,
@@ -73,6 +76,7 @@ impl Camera {
             position: position,
             samples: samples,
             sample_scale: sample_scale,
+            max_depth: max_depth,
         }
     }
 
@@ -167,30 +171,11 @@ impl Camera {
             let mut pixel_color = Color::new(0.0, 0.0, 0.0);
             for _ in 0..self.samples {
                 let r = self.get_ray(col, row, &dist, &mut rng);
-                pixel_color = pixel_color + Ray::ray_color(r, objects); 
+                pixel_color = pixel_color + Ray::ray_color(r, self.max_depth, objects); 
             }
             pixel_color * self.sample_scale
         })
         .collect()
-    }
-
-    pub fn render(&self, objects: &ObjectList) -> Image { 
-        let mut image = Image::new(self.image_width, self.image_height); 
-
-        let dist = Uniform::new(0.0, 1.0);
-        let mut rng = rand::thread_rng();
-
-        for i in 0..image.cols {
-            for j in 0..image.rows {
-                let mut pixel_color = Color::new(0.0, 0.0, 0.0);
-                for _ in 0..self.samples {
-                    let r = self.get_ray(i, j, &dist, &mut rng);
-                    pixel_color = pixel_color + Ray::ray_color(r, objects); 
-                }
-                image.set(j, i, pixel_color * self.sample_scale);
-            }
-        }
-        image
     }
 
     pub fn render_parallel(&self, objects: &ObjectList) -> Image {

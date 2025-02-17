@@ -25,17 +25,23 @@ impl Ray {
         self.origin + t * self.direction
     }
 
-    pub fn ray_color(ray: Ray, objects: &ObjectList) -> Color {
+    pub fn ray_color(ray: Ray, depth: i32, objects: &ObjectList) -> Color {
+        if depth <= 0 {
+            return Color::new(0.0, 0.0, 0.0);
+        }
+        
+
         let mut record = HitRecord::new();
         
-        let ray_t = Interval::new(0.0, f64::INFINITY);
+        let ray_t = Interval::new(0.001, f64::INFINITY);
 
         let hit: bool = objects.hit(&ray, &ray_t, &mut record);
 
         match hit {
             true => {
-
-                Color::from_vec3(0.5 * (record.normal + Self::IDENTITY))
+                let direction = record.normal + Vec3::random_unit_vector();
+                let bounce = Ray::new(record.point, direction);
+                0.5 * Self::ray_color(bounce, depth - 1, objects)
             }
             false => {
                 let unit_direction = Vec3::unit_vector(ray.direction);
