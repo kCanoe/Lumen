@@ -31,9 +31,9 @@ impl Color {
 
 impl fmt::Display for Color {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let rbyte = (255.999 * self.r) as u8;
-        let gbyte = (255.999 * self.g) as u8;
-        let bbyte = (255.999 * self.b) as u8;
+        let rbyte = (255.999 * Color::clamp(self.r)) as u8;
+        let gbyte = (255.999 * Color::clamp(self.g)) as u8;
+        let bbyte = (255.999 * Color::clamp(self.b)) as u8;
         write!(f, "{} {} {}", rbyte, gbyte, bbyte)
     }
 }
@@ -43,9 +43,9 @@ impl Add for Color {
 
     fn add(self, other: Self) -> Self::Output {
         Color {
-            r: Color::clamp(self.r + other.r),
-            g: Color::clamp(self.g + other.g),
-            b: Color::clamp(self.b + other.b),
+            r: self.r + other.r,
+            g: self.g + other.g,
+            b: self.b + other.b,
         }
     }
 }

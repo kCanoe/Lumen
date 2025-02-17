@@ -32,6 +32,7 @@ fn main() {
     cam.set_aspect(16.0, 9.0);
     cam.set_viewport_width(2.0);
     cam.set_image_width(1024);
+    cam.set_sample_count(100);
     cam.initialize();
 
     let mut world = ObjectList::new();

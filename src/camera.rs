@@ -1,5 +1,6 @@
 use crate::Vec3;
 use crate::Point3;
+use crate::Color;
 use crate::Ray;
 use crate::Image;
 use crate::ObjectList;
@@ -17,6 +18,8 @@ pub struct Camera {
     pub pixel_delta_v: Vec3,
     pub pixel_origin: Point3,
     pub position: Point3,
+    pub samples: u32,
+    pub sample_scale: f64,
 }
 
 impl Camera {
@@ -34,6 +37,8 @@ impl Camera {
             pixel_delta_v: Vec3 { x: 0.0, y: 0.0, z: 0.0 },
             pixel_origin: Point3 { x: 0.0, y: 0.0, z: 0.0 },
             position: Point3 { x: 0.0, y: 0.0, z: 0.0 },
+            samples: 1,
+            sample_scale: 1.0,
         }
     }
 
@@ -51,6 +56,8 @@ impl Camera {
         pixel_delta_v: Vec3,
         pixel_origin: Point3,
         position: Point3,
+        samples: u32,
+        sample_scale: f64,
     ) -> Self {
         Camera {
             aspect_ratio: aspect_ratio,
@@ -65,6 +72,8 @@ impl Camera {
             pixel_delta_v: pixel_delta_v,
             pixel_origin: pixel_origin,
             position: position,
+            samples: samples,
+            sample_scale: sample_scale,
         }
     }
 
@@ -99,6 +108,11 @@ impl Camera {
         self.image_width = (new_height as f64 * self.aspect_ratio).round() as i32;
     }
 
+    pub fn set_sample_count(&mut self, samples: u32) {
+        self.samples = samples;
+        self.sample_scale = 1.0 / samples as f64;
+    }
+
     pub fn initialize(&mut self) {
         self.viewport_u = Vec3::new(
             self.viewport_width, 
@@ -123,22 +137,26 @@ impl Camera {
             + 0.5 * (self.pixel_delta_u + self.pixel_delta_v);
     }
 
+    pub fn get_ray(&self, i: usize, j: usize) -> Ray {
+        let pixel_center = self.pixel_origin
+            + (i as f64 * self.pixel_delta_u) + (j as f64 * self.pixel_delta_v);
+
+        let ray_direction = Vec3::from_point(pixel_center - self.position);
+        
+        Ray::new(self.position, ray_direction)
+    }
+
     pub fn render(&self, objects: &ObjectList) -> Image {
         let mut image = Image::new(self.image_width, self.image_height); 
 
-        
-
         for i in 0..image.cols {
             for j in 0..image.rows {
-                let pixel_center = self.pixel_origin
-                    + (i as f64 * self.pixel_delta_u) + (j as f64 * self.pixel_delta_v);
-
-                let ray_direction = Vec3::from_point(pixel_center - self.position);
-                let r = Ray::new(self.position, ray_direction);
-
-                let pixel_color = Ray::ray_color(r, objects); 
-
-                image.set(j, i, pixel_color);
+                let mut pixel_color = Color::new(0.0, 0.0, 0.0);
+                for _ in 0..self.samples {
+                    let r = self.get_ray(i, j);
+                    pixel_color = pixel_color + Ray::ray_color(r, objects); 
+                }
+                image.set(j, i, pixel_color * self.sample_scale);
             }
         }
 
