@@ -7,6 +7,9 @@ use point3::Point3;
 mod color;
 use color::Color;
 
+mod interval;
+use interval::Interval;
+
 mod hit;
 use hit::HitRecord;
 
@@ -32,12 +35,9 @@ fn main() {
     cam.initialize();
 
     let mut world = ObjectList::new();
-    
-    let sphere = Sphere::new(0.2, 0.0, 0.0, -1.0);
-    let ground = Sphere::new(1000.0, 0.0, -101.5, -1.0);
 
-    world.add(&sphere);
-    world.add(&ground);
+    world.add(Box::new(Sphere::new(0.4, 0.0, 0.0, -1.0)));
+    world.add(Box::new(Sphere::new(100.0, 0.0, -100.5, -1.0)));
 
     let image = cam.render(&world);
 

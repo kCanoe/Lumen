@@ -3,6 +3,7 @@ use std::fmt;
 use crate::Point3;
 use crate::Vec3;
 use crate::Color;
+use crate::Interval;
 
 use crate::HitRecord;
 use crate::ObjectList;
@@ -29,7 +30,9 @@ impl Ray {
     pub fn ray_color(ray: Ray, objects: &ObjectList) -> Color {
         let mut record = HitRecord::new();
         
-        let hit: bool = objects.hit(&ray, 0.0, f64::INFINITY, &mut record);
+        let ray_t = Interval::new(0.0, f64::INFINITY);
+
+        let hit: bool = objects.hit(&ray, &ray_t, &mut record);
 
         match hit {
             true => {
