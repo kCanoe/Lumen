@@ -1,8 +1,5 @@
-
-use std::thread;
-
 mod image;
-use image::{ Image, Pixel };
+use image::Image;
 
 mod vec3;
 use vec3::Vec3;
@@ -20,7 +17,8 @@ mod camera;
 use camera::CameraSettings;
 
 mod render;
-use render::render;
+//use render::render;
+use render::render_fast;
 
 fn main() {
     let mut image = Image::new(144, 256);
@@ -36,7 +34,7 @@ fn main() {
 
     let objects = ObjectList::new(tmp);
 
-    render(&mut image, &camera, &objects);
+    render_fast(&mut image, &camera, &objects);
 
     image.print();
 }

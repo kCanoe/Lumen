@@ -1,7 +1,6 @@
 use std::fmt;
 use std::ops::{Add, Sub, Mul, Div, AddAssign, SubAssign, MulAssign, DivAssign};
 
-use rand::rngs::ThreadRng;
 use rand::distributions::{Distribution, Uniform};
 
 #[derive(Debug, Copy, Clone, PartialEq)]

@@ -77,10 +77,13 @@ pub fn process_pixel(
     color * camera.sample_scale
 }
 
+#[allow(dead_code)]
 pub fn render(image: &mut Image, camera: &CameraSettings, objects: &ObjectList) {
     let mut colors = vec![
         vec![Vec3::new(0.0, 0.0, 0.0); camera.image_width]; camera.image_height
     ];
+
+    // todo, parallelize these loops.
 
     for i in 0..camera.image_height {
         for j in 0..camera.image_width {
@@ -94,3 +97,12 @@ pub fn render(image: &mut Image, camera: &CameraSettings, objects: &ObjectList) 
         }
     }
 }
+
+pub fn render_fast(image: &mut Image, camera: &CameraSettings, objects: &ObjectList) {
+    for i in 0..camera.image_height {
+        for j in 0..camera.image_width {
+            image.set(i, j, &process_pixel(i, j, camera, objects));
+        }
+    }
+}
+
