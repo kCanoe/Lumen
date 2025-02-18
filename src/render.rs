@@ -11,6 +11,7 @@ use crate::HitRecord;
 use crate::ObjectList;
 use crate::CameraSettings;
 
+#[inline]
 pub fn get_ray(
     i: usize,
     j: usize,
@@ -29,6 +30,7 @@ pub fn get_ray(
     Ray::new(cam.position, ray_direction) 
 }
 
+#[inline]
 pub fn cast_ray(r: Ray, depth: usize, objects: &ObjectList) -> Vec3 {
     if depth <= 0 {
         return Vec3::new(0.0, 0.0, 0.0);
@@ -63,16 +65,15 @@ pub fn cast_ray(r: Ray, depth: usize, objects: &ObjectList) -> Vec3 {
 pub fn process_pixel(
     i: usize,
     j: usize,
+    dist: &Uniform<f64>,
+    rng: &mut ThreadRng,
     camera: &CameraSettings,
     objects: &ObjectList,
 ) -> Vec3 {
     let mut color = Vec3::new(0.0, 0.0, 0.0);
 
-    let dist = Uniform::new(0.0, 1.0);
-    let mut rng = rand::thread_rng();
-
     for _ in 0..camera.samples {
-        let r = get_ray(i, j, &dist, &mut rng, camera);
+        let r = get_ray(i, j, dist, rng, camera);
         color += cast_ray(r, camera.max_depth, objects);
     }
     
@@ -81,9 +82,12 @@ pub fn process_pixel(
 
 #[allow(dead_code)]
 pub fn render_fast(image: &mut Image, camera: &CameraSettings, objects: &ObjectList) {
+    let dist = Uniform::new(0.0, 1.0);
+    let mut rng = rand::thread_rng();
+
     for i in 0..camera.image_height {
         for j in 0..camera.image_width {
-            image.set(i, j, &process_pixel(i, j, camera, objects));
+            image.set(i, j, &process_pixel(i, j, &dist, &mut rng, camera, objects));
         }
     }
 }
@@ -94,11 +98,12 @@ pub fn render(image: &mut Image, camera: &CameraSettings, objects: &ObjectList) 
         vec![Vec3::new(0.0, 0.0, 0.0); camera.image_width]; camera.image_height
     ];
 
-    // todo, parallelize these loops.
-
+    let dist = Uniform::new(0.0, 1.0);
+    let mut rng = rand::thread_rng();
+    
     for i in 0..camera.image_height {
         for j in 0..camera.image_width {
-            colors[i][j] = process_pixel(i, j, camera, objects);
+            colors[i][j] = process_pixel(i, j, &dist, &mut rng, camera, objects);
         }
     }
 
@@ -129,10 +134,20 @@ pub fn render_parallel(
                 vec![vec![Vec3::new(0.0, 0.0, 0.0); cam_copy.image_width]; chunk_size];
 
             let start = n * chunk_size;
+            
+            let dist = Uniform::new(0.0, 1.0);
+            let mut rng = rand::thread_rng();
 
             for i in 0..chunk_size {
                 for j in 0..cam_copy.image_width {
-                    result[i][j] = process_pixel(i + start, j, &cam_copy, &obj_copy);
+                    result[i][j] = process_pixel(
+                        i + start, 
+                        j,
+                        &dist,
+                        &mut rng, 
+                        &cam_copy, 
+                        &obj_copy
+                    );
                 }
             }
 
@@ -157,7 +172,5 @@ pub fn render_parallel(
         }
     }
 }
-
-
 
 
