@@ -2,6 +2,7 @@ use crate::Vec3;
 
 #[derive(Debug, Copy, Clone)]
 pub struct CameraSettings {
+    #[allow(dead_code)]
     pub aspect_ratio: f64,
     pub viewport_width: f64,
     pub viewport_height: f64,
