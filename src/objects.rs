@@ -26,6 +26,7 @@ impl HitRecord {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct ObjectList {
     pub objects: Vec<Sphere>,
 }
@@ -36,6 +37,7 @@ impl ObjectList {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct Sphere {
     pub radius: f64,
     pub center: Vec3,

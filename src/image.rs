@@ -32,11 +32,11 @@ impl fmt::Display for Pixel {
 }
 
 impl Image {
-    pub fn new(rows: usize, cols: usize) -> Self {
+    pub fn new(width: usize, height: usize) -> Self {
         Image {
-            data: vec![vec![Pixel::new(0, 0, 0); cols]; rows],
-            rows: rows,
-            cols: cols,
+            data: vec![vec![Pixel::new(0, 0, 0); width]; height],
+            rows: height,
+            cols: width,
         }
     }
 
