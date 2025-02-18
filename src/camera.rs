@@ -182,6 +182,8 @@ impl Camera {
         let mut image = Image::new(self.image_width, self.image_height);
         let mut pixels: Vec<Vec<Color>> = Vec::with_capacity(image.cols);
 
+        // todo, parallelize this loop
+
         for col in 0..image.cols {
             pixels.push(self.process_col(col, image.rows, objects)); 
         }
