@@ -1,29 +1,57 @@
-mod types;
-use types::*;
+mod image;
+use image::Image;
+use image::Pixel;
 
-mod utils;
-use utils::*;
-
+mod objects;
+mod render;
 mod camera;
-use camera::Camera;
+
+use std::thread;
+
+fn render_pixel(
+    i: usize,
+    j: usize,
+    camera: CameraSettings,
+    render: RenderSettings,
+    objects: ObjectList,
+) -> Pixel {
+
+}
+
+fn render_column(
+    col: usize,
+    camera: CameraSettings, 
+    render: RenderSettings, 
+    objects: ObjectList
+) -> Vec<Pixel> {
+     
+}
+
+fn render_image(img: &mut Image) {
+    let num_threads = 8;
+    let mut handles = Vec::with_capacity(num_threads);
+
+    for _ in 0..num_threads {
+        let handle = thread::spawn(move || {
+            render_column()
+        });
+    }
+
+    handles.push(handle);
+
+    let mut results: Vec<Vec<Pixel>> = Vec::with_capacity(num_threads);
+
+    for handle in handles {
+        let result = handle.join().unwrap();
+        results.push(result);
+    }
+}
 
 fn main() {
-    let mut cam = Camera::default();
+    let mut img = Image::new(512, 512);
 
-    cam.set_aspect(16.0, 9.0);
-    cam.set_viewport_width(2.0);
-    cam.set_image_width(256);
-    cam.set_sample_count(100);
-    cam.initialize();
+    render_image(&mut img);
 
-    let mut world = ObjectList::new();
-
-    world.add(Box::new(Sphere::new(0.3, 0.3, 0.0, -1.0)));
-    world.add(Box::new(Sphere::new(0.2, -0.3, -0.1, -1.0)));
-    world.add(Box::new(Sphere::new(100.0, 0.0, -100.5, -1.0)));
-
-    let image = cam.render_parallel(&world);
-
-    println!("{}", image);
+    img.print();
 }
 
