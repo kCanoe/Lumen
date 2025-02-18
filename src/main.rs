@@ -23,7 +23,7 @@ mod render;
 use render::render;
 
 fn main() {
-    let mut image = Image::new(512, 512);
+    let mut image = Image::new(144, 256);
 
     let mut camera = CameraSettings::new();
     camera.initialize();
