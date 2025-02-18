@@ -1,57 +1,43 @@
-mod image;
-use image::Image;
-use image::Pixel;
-
-mod objects;
-mod render;
-mod camera;
 
 use std::thread;
 
-fn render_pixel(
-    i: usize,
-    j: usize,
-    camera: CameraSettings,
-    render: RenderSettings,
-    objects: ObjectList,
-) -> Pixel {
+mod image;
+use image::{ Image, Pixel };
 
-}
+mod vec3;
+use vec3::Vec3;
 
-fn render_column(
-    col: usize,
-    camera: CameraSettings, 
-    render: RenderSettings, 
-    objects: ObjectList
-) -> Vec<Pixel> {
-     
-}
+mod ray;
+use ray::Ray;
+use ray::Interval;
 
-fn render_image(img: &mut Image) {
-    let num_threads = 8;
-    let mut handles = Vec::with_capacity(num_threads);
+mod objects;
+use objects::Sphere;
+use objects::HitRecord;
+use objects::ObjectList;
 
-    for _ in 0..num_threads {
-        let handle = thread::spawn(move || {
-            render_column()
-        });
-    }
+mod camera;
+use camera::CameraSettings;
 
-    handles.push(handle);
-
-    let mut results: Vec<Vec<Pixel>> = Vec::with_capacity(num_threads);
-
-    for handle in handles {
-        let result = handle.join().unwrap();
-        results.push(result);
-    }
-}
+mod render;
+use render::render;
 
 fn main() {
-    let mut img = Image::new(512, 512);
+    let mut image = Image::new(512, 512);
 
-    render_image(&mut img);
+    let mut camera = CameraSettings::new();
+    camera.initialize();
 
-    img.print();
+    let tmp: Vec<Sphere> = vec![
+        Sphere::new(0.3, Vec3::new(0.3, 0.0, -1.0)),
+        Sphere::new(0.2, Vec3::new(-0.3, -0.1, -1.0)),
+        Sphere::new(100.0, Vec3::new(0.0, -100.5, -1.0)),
+    ];
+
+    let objects = ObjectList::new(tmp);
+
+    render(&mut image, &camera, &objects);
+
+    image.print();
 }
 

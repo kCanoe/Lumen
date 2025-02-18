@@ -1,5 +1,7 @@
 use std::fmt;
 
+use crate::Vec3;
+
 #[derive(Clone)]
 pub struct Pixel {
     pub r: u8,
@@ -16,6 +18,10 @@ pub struct Image {
 impl Pixel {
     pub fn new(r: u8, g: u8, b: u8) -> Self {
         Pixel { r, g, b }
+    }
+
+    pub fn to_byte(value: f64) -> u8 {
+        (255.999 * value.min(0.0).max(1.0)) as u8
     }
 }
 
@@ -36,6 +42,12 @@ impl Image {
 
     pub fn get(&self, i: usize, j: usize) -> &Pixel {
         &self.data[i][j]
+    }
+
+    pub fn set(&mut self, i: usize, j: usize, color: &Vec3) {
+        self.data[i][j].r = Pixel::to_byte(color.x);
+        self.data[i][j].g = Pixel::to_byte(color.y);
+        self.data[i][j].b = Pixel::to_byte(color.z);
     }
 
     pub fn print(&self) {
