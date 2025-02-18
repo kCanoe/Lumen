@@ -21,6 +21,14 @@ impl Vec3 {
         Vec3 { x: v.x / mg, y: v.y / mg, z: v.z / mg}
     }
 
+    pub fn clamp(v: Vec3) -> Self {
+        Vec3 {
+            x: v.x.max(0.0).min(1.0),
+            y: v.y.max(0.0).min(1.0),
+            z: v.z.max(0.0).min(1.0),
+        }
+    }
+
     pub fn random_vector() -> Self {
         let dist = Uniform::new(0.0, 1.0);
         let mut rng = rand::thread_rng();   

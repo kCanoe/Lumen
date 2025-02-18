@@ -21,7 +21,7 @@ impl Pixel {
     }
 
     pub fn to_byte(value: f64) -> u8 {
-        (255.999 * value.min(0.0).max(1.0)) as u8
+        (255.999 * value.max(0.0).min(1.0)) as u8
     }
 }
 

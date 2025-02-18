@@ -19,8 +19,8 @@ pub fn get_ray(
     let offset = Vec3::new(dist.sample(rng) - 0.5, dist.sample(rng) - 0.5, 0.0);
 
     let pixel_center = cam.pixel_origin
-        + (i as f64 + offset.x) * cam.pixel_delta_u
-        + (j as f64 + offset.y) * cam.pixel_delta_v;
+        + (j as f64 + offset.x) * cam.pixel_delta_u
+        + (i as f64 + offset.y) * cam.pixel_delta_v;
 
     let ray_direction = pixel_center - cam.position;
 
@@ -28,7 +28,7 @@ pub fn get_ray(
 }
 
 pub fn cast_ray(r: Ray, depth: usize, objects: &ObjectList) -> Vec3 {
-    if depth < 1 {
+    if depth <= 0 {
         return Vec3::new(0.0, 0.0, 0.0);
     }
 
@@ -49,11 +49,12 @@ pub fn cast_ray(r: Ray, depth: usize, objects: &ObjectList) -> Vec3 {
     if hit == true {
         let direction = record.normal + Vec3::random_unit_vector();
         let bounce = Ray::new(record.point, direction);
-        return 0.5 * cast_ray(bounce, depth-1, objects);
+        return 0.5 * cast_ray(bounce, depth - 1, objects);
     } else {
         let unit_direction = Vec3::unit_vector(r.direction);
         let a = 0.5 * (unit_direction.y + 1.0);
-        return (1.0 - a) * Vec3::new(0.5, 0.7, 1.0) + a * Vec3::new(1.0, 1.0, 1.0);
+        return Vec3::clamp((1.0 - a) * Vec3::new(0.5, 0.7, 1.0))
+            + Vec3::clamp(a * Vec3::new(1.0, 1.0, 1.0));
     }
 }
 
@@ -78,17 +79,17 @@ pub fn process_pixel(
 
 pub fn render(image: &mut Image, camera: &CameraSettings, objects: &ObjectList) {
     let mut colors = vec![
-        vec![Vec3::new(0.0, 0.0, 0.0); camera.image_height]; camera.image_width
+        vec![Vec3::new(0.0, 0.0, 0.0); camera.image_width]; camera.image_height
     ];
 
-    for i in 0..camera.image_width {
-        for j in 0..camera.image_height {
+    for i in 0..camera.image_height {
+        for j in 0..camera.image_width {
             colors[i][j] = process_pixel(i, j, camera, objects);
         }
     }
 
-    for i in 0..camera.image_width {
-        for j in 0..camera.image_height {
+    for i in 0..camera.image_height {
+        for j in 0..camera.image_width {
             image.set(i, j, &colors[i][j]);
         }
     }
