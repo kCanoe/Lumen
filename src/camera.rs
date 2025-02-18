@@ -21,7 +21,7 @@ pub struct CameraSettings {
 }
 
 impl CameraSettings {
-    pub fn new() -> Self {
+    pub fn new(width: usize, height: usize) -> Self {
         CameraSettings {
             aspect_ratio: 16.0 / 9.0,
             viewport_width: 2.0,
@@ -33,8 +33,8 @@ impl CameraSettings {
             pixel_delta_u: Vec3::new(0.0, 0.0, 0.0),
             pixel_delta_v: Vec3::new(0.0, 0.0, 0.0),
             pixel_origin: Vec3::new(0.0, 0.0, 0.0),
-            image_width: 256,
-            image_height: 144,
+            image_width: width,
+            image_height: height,
             samples: 100,
             sample_scale: 0.01,
             max_depth: 10,

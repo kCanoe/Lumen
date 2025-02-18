@@ -17,13 +17,14 @@ mod camera;
 use camera::CameraSettings;
 
 mod render;
+use render::render_parallel;
 //use render::render;
-use render::render_fast;
+//use render::render_fast;
 
 fn main() {
-    let mut image = Image::new(144, 256);
+    let mut image = Image::new(1024, 576);
+    let mut camera = CameraSettings::new(1024, 576);
 
-    let mut camera = CameraSettings::new();
     camera.initialize();
 
     let tmp: Vec<Sphere> = vec![
@@ -34,8 +35,13 @@ fn main() {
 
     let objects = ObjectList::new(tmp);
 
-    render_fast(&mut image, &camera, &objects);
+    render_parallel(&mut image, &camera, &objects);
+    //render(&mut image, &camera, &objects);
+    //render_fast(&mut image, &camera, &objects);
 
     image.print();
 }
+
+
+
 

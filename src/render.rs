@@ -1,3 +1,5 @@
+use std::thread;
+
 use rand::rngs::ThreadRng;
 use rand::distributions::{Distribution, Uniform};
 
@@ -78,6 +80,15 @@ pub fn process_pixel(
 }
 
 #[allow(dead_code)]
+pub fn render_fast(image: &mut Image, camera: &CameraSettings, objects: &ObjectList) {
+    for i in 0..camera.image_height {
+        for j in 0..camera.image_width {
+            image.set(i, j, &process_pixel(i, j, camera, objects));
+        }
+    }
+}
+
+#[allow(dead_code)]
 pub fn render(image: &mut Image, camera: &CameraSettings, objects: &ObjectList) {
     let mut colors = vec![
         vec![Vec3::new(0.0, 0.0, 0.0); camera.image_width]; camera.image_height
@@ -98,11 +109,55 @@ pub fn render(image: &mut Image, camera: &CameraSettings, objects: &ObjectList) 
     }
 }
 
-pub fn render_fast(image: &mut Image, camera: &CameraSettings, objects: &ObjectList) {
+#[allow(dead_code)]
+pub fn render_parallel(
+    image: &mut Image, 
+    camera: &CameraSettings, 
+    objects: &ObjectList
+) {
+    let num_threads = 8;
+    let mut handles = Vec::with_capacity(num_threads);
+
+    let chunk_size = camera.image_height / num_threads;
+
+    for n in 0..num_threads {
+        let cam_copy = camera.clone();
+        let obj_copy = objects.clone();
+
+        let handle = thread::spawn(move || {
+            let mut result =
+                vec![vec![Vec3::new(0.0, 0.0, 0.0); cam_copy.image_width]; chunk_size];
+
+            let start = n * chunk_size;
+
+            for i in 0..chunk_size {
+                for j in 0..cam_copy.image_width {
+                    result[i][j] = process_pixel(i + start, j, &cam_copy, &obj_copy);
+                }
+            }
+
+            result
+        });
+
+        handles.push(handle);
+    }
+
+    let mut results: Vec<Vec<Vec3>> = Vec::with_capacity(num_threads);
+
+    for handle in handles {
+        let result = handle.join().unwrap();
+        for r in result {
+            results.push(r);
+        }
+    }
+
     for i in 0..camera.image_height {
         for j in 0..camera.image_width {
-            image.set(i, j, &process_pixel(i, j, camera, objects));
+            image.set(i, j, &results[i][j]);
         }
     }
 }
+
+
+
 
