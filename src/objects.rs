@@ -32,6 +32,7 @@ pub struct ObjectList {
 }
 
 impl ObjectList {
+    #[allow(dead_code)]
     pub fn new(objects: Vec<Sphere>) -> Self {
         ObjectList { objects }
     }

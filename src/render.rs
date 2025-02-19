@@ -81,23 +81,27 @@ pub fn process_pixel(
     Pixel::from_vec(color * camera.sample_scale)
 }
 
-pub fn render(camera: &CameraSettings, objects: &ObjectList) -> Image {
-    let img = Arc::new(Mutex::new(Image::new(1024, 576)));
-    let (num_threads, chunk_rows, chunk_cols)  = (8, 576 / 8, 1024);     
-    let mut handles = Vec::with_capacity(num_threads);
+pub fn render(n_threads: usize, camera: &CameraSettings, objects: &ObjectList) -> Image {
+    let img = Arc::new(Mutex::new(Image::new(camera.image_width, camera.image_height)));
+    
+    let mut handles = Vec::with_capacity(n_threads);
+    
+    let chunk_rows = camera.image_height / n_threads;
+    let chunk_cols = camera.image_width;
 
-    for n in 0..num_threads {
+    for n in 0..n_threads {
         let img_clone = Arc::clone(&img);
-        let start_row = n * chunk_rows;
         let (cam, obj) = (camera.clone(), objects.clone());
         
         let handle = thread::spawn(move || {
-            let mut rng = rand::thread_rng();
-            let dist = Uniform::new(0.0, 1.0);
-
+            let (dist, mut rng) = (Uniform::new(0.0, 1.0), rand::thread_rng());
             let mut img_local = img_clone.lock().unwrap();
-            for i in start_row..start_row+chunk_rows {
-                for j in 0..chunk_cols {
+
+            let (start_row, end_row) = (n*chunk_rows, n*chunk_rows + chunk_rows);
+            let (start_col, end_col) = (0, chunk_cols);
+
+            for i in start_row..end_row {
+                for j in start_col..end_col {
                     let px = process_pixel(i, j, &dist, &mut rng, &cam, &obj);
                     img_local.set(i, j, px);
                 }
