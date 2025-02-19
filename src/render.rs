@@ -83,7 +83,9 @@ pub fn process_pixel(
 
 pub fn render(n_threads: usize, camera: &CameraSettings, objects: &ObjectList) -> Image {
     let img = Arc::new(Mutex::new(Image::new(camera.image_width, camera.image_height)));
-    
+    let a_cam = Arc::new(camera.clone());
+    let a_obj = Arc::new(objects.clone());
+
     let mut handles = Vec::with_capacity(n_threads);
     
     let chunk_rows = camera.image_height / n_threads;
@@ -91,7 +93,8 @@ pub fn render(n_threads: usize, camera: &CameraSettings, objects: &ObjectList) -
 
     for n in 0..n_threads {
         let img_clone = Arc::clone(&img);
-        let (cam, obj) = (camera.clone(), objects.clone());
+        let cam = Arc::clone(&a_cam);
+        let obj = Arc::clone(&a_obj);
         
         let handle = thread::spawn(move || {
             let (dist, mut rng) = (Uniform::new(0.0, 1.0), rand::thread_rng());
