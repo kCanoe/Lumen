@@ -81,10 +81,9 @@ pub fn process_pixel(
     Pixel::from_vec(color * camera.sample_scale)
 }
 
-pub fn render(n_threads: usize, camera: &CameraSettings, objects: &ObjectList) -> Image {
+pub fn render(n_threads: usize, camera: CameraSettings, objects: ObjectList) -> Image {
     let img = Arc::new(Mutex::new(Image::new(camera.image_width, camera.image_height)));
-    let a_cam = Arc::new(camera.clone());
-    let a_obj = Arc::new(objects.clone());
+    let (a_cam, a_obj) = (Arc::new(camera), Arc::new(objects));
 
     let mut handles = Vec::with_capacity(n_threads);
     

@@ -35,7 +35,7 @@ fn main() {
         ],
     };
 
-    let image = render(32, &camera, &objects);
+    let image = render(32, camera, objects);
 
     image.print();
 }
