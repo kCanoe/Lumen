@@ -3,10 +3,52 @@ use crate::Ray;
 use crate::Interval;
 
 #[derive(Debug, Clone, Copy)]
+pub enum Material {
+    Diffuse(Vec3),
+    Metal(Vec3, f64),
+}
+
+impl Material {
+    pub fn scatter(
+        &self,
+        r: &Ray,
+        record: &HitRecord,
+        attenuation: &mut Vec3,
+        scattered: &mut Ray
+    ) -> bool {
+        match self {
+            Self::Diffuse(albedo) => {
+                let mut scatter_direction = record.normal + Vec3::random_unit_vector(); 
+
+                if scatter_direction.near_zero() == true {
+                    scatter_direction = record.normal
+                }
+
+                *scattered = Ray::new(record.point, scatter_direction);
+                *attenuation = albedo.clone();
+                return true;
+            }
+            Self::Metal(albedo, fuzz) => {
+                let mut reflected = Vec3::reflect(r.direction, record.normal);
+
+                reflected = Vec3::unit_vector(reflected)
+                    + *fuzz * Vec3::random_unit_vector();
+                
+                *scattered = Ray::new(record.point, reflected);
+                *attenuation = albedo.clone();
+
+                return (scattered.direction * record.normal) > 0.0;
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
 pub struct HitRecord {
     pub point: Vec3,
     pub normal: Vec3,
     pub t: f64,
+    pub mat: Material,
 }
 
 impl HitRecord {
@@ -15,6 +57,7 @@ impl HitRecord {
             point: Vec3::new(0.0, 0.0, 0.0),
             normal: Vec3::new(0.0, 0.0, 0.0),
             t: 0.0,
+            mat: Material::Diffuse(Vec3::new(0.0, 0.0, 0.0)),
         }
     }
 
@@ -42,11 +85,12 @@ impl ObjectList {
 pub struct Sphere {
     pub radius: f64,
     pub center: Vec3,
+    pub mat: Material,
 }
 
 impl Sphere {
-    pub fn new(radius: f64, center: Vec3) -> Self {
-        Sphere { radius, center }
+    pub fn new(radius: f64, center: Vec3, mat: Material) -> Self {
+        Sphere { radius, center, mat }
     }
 
     pub fn hit(&self, r: &Ray, rt: &Interval, record: &mut HitRecord) -> bool {
@@ -72,6 +116,7 @@ impl Sphere {
 
         record.t = root;
         record.point = r.at(root);
+        record.mat = self.mat;
 
         let outward_normal = (r.at(root) - self.center) / self.radius;
 

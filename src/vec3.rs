@@ -50,6 +50,18 @@ impl Vec3 {
             false => -1.0 * on_unit_sphere,
         }
     }
+
+    pub fn reflect(v: Vec3, u: Vec3) -> Vec3 {
+        v - (2.0 * v * u * u)
+    }
+
+    pub fn near_zero(&self) -> bool {
+        let s = 0.00000001;
+        match ((self.x.abs() < s), (self.y.abs() < s), (self.z.abs() < s)) {
+            (true, true, true) => true,
+            _ => false,
+        }
+    }
 }
 
 impl fmt::Display for Vec3 {

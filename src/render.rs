@@ -59,9 +59,17 @@ pub fn cast_ray(
     }
 
     if hit == true {
-        let direction = record.normal + vecs[s*10 + depth];
-        let bounce = Ray::new(record.point, direction);
-        return 0.5 * cast_ray(bounce, s, vecs, depth - 1, objects);
+        let mut scattered = Ray::new(Vec3::new(0.0, 0.0, 0.0), Vec3::new(0.0, 0.0, 0.0));
+        let mut attenuation = Vec3::new(0.0, 0.0, 0.0);
+        if record.mat.scatter(&r, &record, &mut attenuation, &mut scattered) {
+            let cast = cast_ray(scattered, s, vecs, depth - 1, objects);
+            return Vec3 {
+                x: attenuation.x * cast.x,
+                y: attenuation.y * cast.y,
+                z: attenuation.z * cast.z,
+            };
+        }
+        return Vec3::new(0.0, 0.0, 0.0);
     } else {
         let unit_direction = Vec3::unit_vector(r.direction);
         let a = 0.5 * (unit_direction.y + 1.0);
@@ -94,8 +102,9 @@ pub fn render(n_threads: usize, camera: CameraSettings, objects: ObjectList) -> 
 
     let a_vecs = Arc::new(r_vecs);
     let a_floats = Arc::new(r_floats);
-    let img = Arc::new(Mutex::new(Image::new(camera.image_width, camera.image_height)));
     let (a_cam, a_obj) = (Arc::new(camera), Arc::new(objects));
+
+    let img = Arc::new(Mutex::new(Image::new(camera.image_width, camera.image_height)));
 
     let mut handles = Vec::with_capacity(n_threads);
     

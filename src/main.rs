@@ -1,5 +1,3 @@
-use std::time::Instant;
-
 mod image;
 use image::Pixel;
 use image::Image;
@@ -13,6 +11,7 @@ use ray::Interval;
 
 mod objects;
 use objects::Sphere;
+use objects::Material;
 use objects::HitRecord;
 use objects::ObjectList;
 
@@ -23,15 +22,21 @@ mod render;
 use render::render;
 
 fn main() {
+    let ground = Material::Diffuse(Vec3::new(0.8, 0.8, 0.0));
+    let center = Material::Diffuse(Vec3::new(0.1, 0.2, 0.5));
+    let left = Material::Metal(Vec3::new(0.8, 0.8, 0.8), 0.3);
+    let right = Material::Metal(Vec3::new(0.8, 0.6, 0.2), 1.0);
+
     let mut camera = CameraSettings::new(1024, 576);
 
     camera.initialize();
 
     let objects = ObjectList {
         objects: vec![
-            Sphere::new(0.3, Vec3::new(0.3, 0.0, -1.0)),
-            Sphere::new(0.2, Vec3::new(-0.3, -0.1, -1.0)),
-            Sphere::new(100.0, Vec3::new(0.0, -100.5, -1.0)),
+            Sphere::new(100.0, Vec3::new(0.0, -100.5, -1.0), ground),
+            Sphere::new(0.5, Vec3::new(0.0, 0.0, -1.2), center),
+            Sphere::new(0.5, Vec3::new(1.0, 0.0, -1.0), right),
+            Sphere::new(0.5, Vec3::new(-1.0, 0.0, -1.0), left),
         ],
     };
 
