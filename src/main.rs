@@ -29,6 +29,12 @@ fn main() {
 
     let mut camera = CameraSettings::new(1024, 576);
 
+
+    camera.vertical_fov = 90.0;
+    camera.look_from = Vec3::new(-2.0, 2.0, 1.0);
+    camera.look_at = Vec3::new(0.0, 0.0, -1.0);
+    camera.up = Vec3::new(0.0, 1.0, 0.0);
+
     camera.initialize();
 
     let objects = ObjectList {

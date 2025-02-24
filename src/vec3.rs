@@ -20,6 +20,14 @@ impl Vec3 {
         Vec3 { x: v.x / mg, y: v.y / mg, z: v.z / mg}
     }
 
+    pub fn cross(u: Vec3, v: Vec3) -> Vec3 {
+        Vec3 {
+            x: u.y * v.z - u.z * v.y,
+            y: u.z * v.x - u.x * v.z,
+            z: u.x * v.y - u.y * v.x,
+        }
+    }
+
     pub fn clamp(v: Vec3) -> Self {
         Vec3 {
             x: v.x.max(0.0).min(1.0),
@@ -57,6 +65,10 @@ impl Vec3 {
 
     pub fn len_squared(&self) -> f64 {
         self.x * self.x + self.y * self.y + self.z * self.z
+    }
+
+    pub fn length(&self) -> f64 {
+        (self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
     }
 
     pub fn refract(uv: Vec3, n: Vec3, eta_etap: f64) -> Vec3 {
