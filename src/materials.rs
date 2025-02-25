@@ -44,7 +44,7 @@ pub trait Scatter {
 impl Scatter for Diffuse {
     fn scatter(
         &self,
-        r: &Ray,
+        _r: &Ray,
         record: &HitRecord,
         attenuation: &mut Vec3,
         scattered: &mut Ray,
@@ -68,7 +68,8 @@ impl Scatter for Metal {
         scattered: &mut Ray,
     ) -> bool {
         let mut reflected = Vec3::reflect(r.direction, record.normal);
-        reflected = Vec3::unit_vector(reflected) + self.fuzz * Vec3::random_unit_vector();
+        reflected = Vec3::unit_vector(reflected)
+            + self.fuzz * Vec3::random_unit_vector();
         *scattered = Ray::new(record.point, reflected);
         *attenuation = self.albedo.clone();
         return (scattered.direction * record.normal) > 0.0;
@@ -106,8 +107,8 @@ impl Scatter for Dielectric {
     }
 }
 
-impl Material {
-    pub fn scatter(
+impl Scatter for Material {
+    fn scatter(
         &self,
         r: &Ray,
         record: &HitRecord,
@@ -115,9 +116,13 @@ impl Material {
         scattered: &mut Ray,
     ) -> bool {
         match self {
-            Self::Diffuse(mat) => mat.scatter(r, record, attenuation, scattered),
+            Self::Diffuse(mat) => {
+                mat.scatter(r, record, attenuation, scattered)
+            }
             Self::Metal(mat) => mat.scatter(r, record, attenuation, scattered),
-            Self::Dielectric(mat) => mat.scatter(r, record, attenuation, scattered),
+            Self::Dielectric(mat) => {
+                mat.scatter(r, record, attenuation, scattered)
+            }
         }
     }
 }

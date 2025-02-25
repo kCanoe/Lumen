@@ -1,5 +1,7 @@
 use std::fmt;
-use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
+use std::ops::{
+    Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign,
+};
 
 use rand::distributions::{Distribution, Uniform};
 
@@ -78,7 +80,8 @@ impl Vec3 {
     pub fn refract(uv: Vec3, n: Vec3, eta_etap: f64) -> Vec3 {
         let cos_theta = (-1.0 * uv * n).min(1.0);
         let r_out_perp = eta_etap * (uv + cos_theta * n);
-        let r_out_parallel = -1.0 * n * (1.0 - r_out_perp.len_squared()).abs().sqrt();
+        let r_out_parallel =
+            -1.0 * n * (1.0 - r_out_perp.len_squared()).abs().sqrt();
         r_out_perp + r_out_parallel
     }
 

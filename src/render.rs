@@ -14,8 +14,16 @@ use crate::Pixel;
 use crate::Ray;
 use crate::Vec3;
 
+use crate::materials::Scatter;
+
 #[inline]
-pub fn get_ray(i: usize, j: usize, s: usize, floats: &Vec<f64>, cam: &CameraSettings) -> Ray {
+pub fn get_ray(
+    i: usize,
+    j: usize,
+    s: usize,
+    floats: &Vec<f64>,
+    cam: &CameraSettings,
+) -> Ray {
     let offset = Vec3::new(floats[s * 2] - 0.5, floats[s * 2 + 1] - 0.5, 0.0);
 
     let pixel_center = cam.pixel_origin
@@ -28,7 +36,13 @@ pub fn get_ray(i: usize, j: usize, s: usize, floats: &Vec<f64>, cam: &CameraSett
 }
 
 #[inline]
-pub fn cast_ray(r: Ray, s: usize, vecs: &Vec<Vec3>, depth: usize, objects: &ObjectList) -> Vec3 {
+pub fn cast_ray(
+    r: Ray,
+    s: usize,
+    vecs: &Vec<Vec3>,
+    depth: usize,
+    objects: &ObjectList,
+) -> Vec3 {
     if depth <= 0 {
         return Vec3::new(0.0, 0.0, 0.0);
     }
@@ -47,7 +61,8 @@ pub fn cast_ray(r: Ray, s: usize, vecs: &Vec<Vec3>, depth: usize, objects: &Obje
     }
 
     if hit == true {
-        let mut scattered = Ray::new(Vec3::new(0.0, 0.0, 0.0), Vec3::new(0.0, 0.0, 0.0));
+        let mut scattered =
+            Ray::new(Vec3::new(0.0, 0.0, 0.0), Vec3::new(0.0, 0.0, 0.0));
         let mut attenuation = Vec3::new(0.0, 0.0, 0.0);
         if record
             .mat
@@ -64,7 +79,8 @@ pub fn cast_ray(r: Ray, s: usize, vecs: &Vec<Vec3>, depth: usize, objects: &Obje
     } else {
         let unit_direction = Vec3::unit_vector(r.direction);
         let a = 0.5 * (unit_direction.y + 1.0);
-        return (1.0 - a) * Vec3::new(0.5, 0.7, 1.0) + a * Vec3::new(1.0, 1.0, 1.0);
+        return (1.0 - a) * Vec3::new(0.5, 0.7, 1.0)
+            + a * Vec3::new(1.0, 1.0, 1.0);
     }
 }
 
@@ -86,7 +102,11 @@ pub fn process_pixel(
     Pixel::from_vec(color * camera.sample_scale)
 }
 
-pub fn render(n_threads: usize, camera: CameraSettings, objects: ObjectList) -> Image {
+pub fn render(
+    n_threads: usize,
+    camera: CameraSettings,
+    objects: ObjectList,
+) -> Image {
     let mut rng = StdRng::from_entropy();
     let r_floats: Vec<f64> = (0..camera.samples * 2)
         .map(|_| rng.gen_range(0.0..=1.0))
@@ -117,7 +137,8 @@ pub fn render(n_threads: usize, camera: CameraSettings, objects: ObjectList) -> 
         let vecs = Arc::clone(&a_vecs);
 
         let handle = thread::spawn(move || {
-            let (start_row, end_row) = (n * chunk_rows, n * chunk_rows + chunk_rows);
+            let (start_row, end_row) =
+                (n * chunk_rows, n * chunk_rows + chunk_rows);
             let (start_col, end_col) = (0, chunk_cols);
             let mut img_local = img_clone.lock().unwrap();
 
