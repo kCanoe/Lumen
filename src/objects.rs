@@ -113,6 +113,10 @@ impl ObjectList {
     pub fn new(objects: Vec<Sphere>) -> Self {
         ObjectList { objects }
     }
+
+    pub fn add(&mut self, obj: Sphere) {
+        self.objects.push(obj);
+    }
 }
 
 #[derive(Debug, Clone)]

@@ -97,8 +97,10 @@ pub fn process_pixel(
 
 pub fn render(n_threads: usize, camera: CameraSettings, objects: ObjectList) -> Image {
     let mut rng = StdRng::from_entropy();
-    let r_floats: Vec<f64> = (0..200).map(|_| rng.gen_range(0.0..=1.0)).collect(); 
-    let r_vecs: Vec<Vec3> = (0..1100).map(|_| Vec3::random_unit_vector()).collect();
+    let r_floats: Vec<f64> = (0..camera.samples*2)
+        .map(|_| rng.gen_range(0.0..=1.0)).collect(); 
+    let r_vecs: Vec<Vec3> = (0..camera.samples*11)
+        .map(|_| Vec3::random_unit_vector()).collect();
 
     let a_vecs = Arc::new(r_vecs);
     let a_floats = Arc::new(r_floats);
