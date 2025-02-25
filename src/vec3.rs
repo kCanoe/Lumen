@@ -1,5 +1,5 @@
 use std::fmt;
-use std::ops::{Add, Sub, Mul, Div, AddAssign, SubAssign, MulAssign, DivAssign};
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
 
 use rand::distributions::{Distribution, Uniform};
 
@@ -17,7 +17,11 @@ impl Vec3 {
 
     pub fn unit_vector(v: Vec3) -> Self {
         let mg = (v.x.powi(2) + v.y.powi(2) + v.z.powi(2)).sqrt();
-        Vec3 { x: v.x / mg, y: v.y / mg, z: v.z / mg}
+        Vec3 {
+            x: v.x / mg,
+            y: v.y / mg,
+            z: v.z / mg,
+        }
     }
 
     pub fn cross(u: Vec3, v: Vec3) -> Vec3 {
@@ -38,7 +42,7 @@ impl Vec3 {
 
     pub fn random_vector() -> Self {
         let dist = Uniform::new(0.0, 1.0);
-        let mut rng = rand::thread_rng();   
+        let mut rng = rand::thread_rng();
         Vec3 {
             x: dist.sample(&mut rng),
             y: dist.sample(&mut rng),
@@ -52,7 +56,7 @@ impl Vec3 {
 
     pub fn random_on_hemisphere(normal: Vec3) -> Self {
         let on_unit_sphere = Self::random_unit_vector();
-        
+
         match on_unit_sphere * normal > 0.0 {
             true => on_unit_sphere,
             false => -1.0 * on_unit_sphere,
@@ -119,14 +123,13 @@ impl Sub for Vec3 {
     }
 }
 
-
 // dot product between two Vec3
 
 impl Mul for Vec3 {
     type Output = f64;
 
     fn mul(self, rhs: Self) -> Self::Output {
-        self.x * rhs.x + self.y * rhs.y + self.z * rhs.z 
+        self.x * rhs.x + self.y * rhs.y + self.z * rhs.z
     }
 }
 
@@ -209,5 +212,3 @@ impl DivAssign<f64> for Vec3 {
         }
     }
 }
-
-

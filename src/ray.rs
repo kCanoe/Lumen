@@ -22,12 +22,9 @@ pub struct Interval {
 
 impl Interval {
     pub fn new(min: f64, max: f64) -> Self {
-        Interval {
-            min: min,
-            max: max,
-        }
+        Interval { min: min, max: max }
     }
-    
+
     #[allow(dead_code)]
     pub fn contains(&self, x: f64) -> bool {
         self.min <= x && x <= self.max

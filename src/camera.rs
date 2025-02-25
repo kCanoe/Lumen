@@ -66,7 +66,7 @@ impl CameraSettings {
 
         self.w = Vec3::unit_vector(self.look_from - self.look_at);
         self.u = Vec3::unit_vector(Vec3::cross(self.up, self.w));
-        self.v = Vec3::cross(self.w,  self.u);
+        self.v = Vec3::cross(self.w, self.u);
 
         self.viewport_u = self.viewport_width * self.u;
         self.viewport_v = -self.viewport_height * self.v;
@@ -74,8 +74,10 @@ impl CameraSettings {
         self.pixel_delta_u = self.viewport_u / self.image_width as f64;
         self.pixel_delta_v = self.viewport_v / self.image_height as f64;
 
-        self.pixel_origin = self.position - (self.focal_length * self.w)
-            - self.viewport_u / 2.0 - self.viewport_v / 2.0
+        self.pixel_origin = self.position
+            - (self.focal_length * self.w)
+            - self.viewport_u / 2.0
+            - self.viewport_v / 2.0
             + 0.5 * (self.pixel_delta_u + self.pixel_delta_v);
     }
 }

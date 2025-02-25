@@ -1,28 +1,22 @@
-use std::thread;
 use std::sync::{Arc, Mutex};
+use std::thread;
 
-use rand::Rng;
 use rand::rngs::StdRng;
+use rand::Rng;
 use rand::SeedableRng;
 
-use crate::Vec3;
-use crate::Ray;
-use crate::Image;
-use crate::Pixel;
-use crate::Interval;
-use crate::HitRecord;
-use crate::ObjectList;
 use crate::CameraSettings;
+use crate::HitRecord;
+use crate::Image;
+use crate::Interval;
+use crate::ObjectList;
+use crate::Pixel;
+use crate::Ray;
+use crate::Vec3;
 
 #[inline]
-pub fn get_ray(
-    i: usize,
-    j: usize,
-    s: usize,
-    floats: &Vec<f64>,
-    cam: &CameraSettings,
-) -> Ray {
-    let offset = Vec3::new(floats[s*2] - 0.5, floats[s*2+1] - 0.5, 0.0);
+pub fn get_ray(i: usize, j: usize, s: usize, floats: &Vec<f64>, cam: &CameraSettings) -> Ray {
+    let offset = Vec3::new(floats[s * 2] - 0.5, floats[s * 2 + 1] - 0.5, 0.0);
 
     let pixel_center = cam.pixel_origin
         + (j as f64 + offset.x) * cam.pixel_delta_u
@@ -30,17 +24,11 @@ pub fn get_ray(
 
     let ray_direction = pixel_center - cam.position;
 
-    Ray::new(cam.position, ray_direction) 
+    Ray::new(cam.position, ray_direction)
 }
 
 #[inline]
-pub fn cast_ray(
-    r: Ray,
-    s: usize,
-    vecs: &Vec<Vec3>,
-    depth: usize,
-    objects: &ObjectList
-) -> Vec3 {
+pub fn cast_ray(r: Ray, s: usize, vecs: &Vec<Vec3>, depth: usize, objects: &ObjectList) -> Vec3 {
     if depth <= 0 {
         return Vec3::new(0.0, 0.0, 0.0);
     }
@@ -61,7 +49,10 @@ pub fn cast_ray(
     if hit == true {
         let mut scattered = Ray::new(Vec3::new(0.0, 0.0, 0.0), Vec3::new(0.0, 0.0, 0.0));
         let mut attenuation = Vec3::new(0.0, 0.0, 0.0);
-        if record.mat.scatter(&r, &record, &mut attenuation, &mut scattered) {
+        if record
+            .mat
+            .scatter(&r, &record, &mut attenuation, &mut scattered)
+        {
             let cast = cast_ray(scattered, s, vecs, depth - 1, objects);
             return Vec3 {
                 x: attenuation.x * cast.x,
@@ -91,25 +82,30 @@ pub fn process_pixel(
         let r = get_ray(i, j, s, floats, camera);
         color += cast_ray(r, s, vecs, camera.max_depth, objects);
     }
-    
+
     Pixel::from_vec(color * camera.sample_scale)
 }
 
 pub fn render(n_threads: usize, camera: CameraSettings, objects: ObjectList) -> Image {
     let mut rng = StdRng::from_entropy();
-    let r_floats: Vec<f64> = (0..camera.samples*2)
-        .map(|_| rng.gen_range(0.0..=1.0)).collect(); 
-    let r_vecs: Vec<Vec3> = (0..camera.samples*11)
-        .map(|_| Vec3::random_unit_vector()).collect();
+    let r_floats: Vec<f64> = (0..camera.samples * 2)
+        .map(|_| rng.gen_range(0.0..=1.0))
+        .collect();
+    let r_vecs: Vec<Vec3> = (0..camera.samples * 11)
+        .map(|_| Vec3::random_unit_vector())
+        .collect();
 
     let a_vecs = Arc::new(r_vecs);
     let a_floats = Arc::new(r_floats);
     let (a_cam, a_obj) = (Arc::new(camera), Arc::new(objects));
 
-    let img = Arc::new(Mutex::new(Image::new(camera.image_width, camera.image_height)));
+    let img = Arc::new(Mutex::new(Image::new(
+        camera.image_width,
+        camera.image_height,
+    )));
 
     let mut handles = Vec::with_capacity(n_threads);
-    
+
     let chunk_rows = camera.image_height / n_threads;
     let chunk_cols = camera.image_width;
 
@@ -119,9 +115,9 @@ pub fn render(n_threads: usize, camera: CameraSettings, objects: ObjectList) -> 
         let obj = Arc::clone(&a_obj);
         let floats = Arc::clone(&a_floats);
         let vecs = Arc::clone(&a_vecs);
-        
+
         let handle = thread::spawn(move || {
-            let (start_row, end_row) = (n*chunk_rows, n*chunk_rows + chunk_rows);
+            let (start_row, end_row) = (n * chunk_rows, n * chunk_rows + chunk_rows);
             let (start_col, end_col) = (0, chunk_cols);
             let mut img_local = img_clone.lock().unwrap();
 
@@ -139,7 +135,8 @@ pub fn render(n_threads: usize, camera: CameraSettings, objects: ObjectList) -> 
         handle.join().unwrap();
     }
 
-    Arc::try_unwrap(img).ok().and_then(|mutex| mutex.into_inner().ok()).unwrap()
+    Arc::try_unwrap(img)
+        .ok()
+        .and_then(|mutex| mutex.into_inner().ok())
+        .unwrap()
 }
-
-
