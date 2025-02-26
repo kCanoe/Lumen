@@ -29,8 +29,7 @@ fn main() {
     camera.look_from = Vec3::new(8.0, 2.0, 10.0);
     camera.look_at = Vec3::new(0.0, 0.75, 0.0);
     camera.up = Vec3::new(0.0, 1.0, 0.0);
-    camera.samples = 500;
-    camera.sample_scale = 1.0 / 100.0;
+    camera.samples = 100;
     camera.max_depth = 50;
     camera.initialize();
 

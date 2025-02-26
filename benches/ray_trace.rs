@@ -10,18 +10,13 @@ mod tests {
     use Lumen::render::render;
     use Lumen::render::ChunkRenderer;
     use Lumen::vec3::Vec3;
-
+    
     #[bench]
-    fn bench_compute_pixel(b: &mut Bencher) {
-        let (cam, objs) = setup();
-        let mut renderer = ChunkRenderer::new(objs, cam);
+    fn bench_ray_trace(b: &mut Bencher) {
+        let (camera, objects) = setup();
         b.iter(|| {
-            for i in 0..renderer.cam.image_width / 32 {
-                for j in 0..renderer.cam.image_height / 32 {
-                    let pixel = renderer.compute_pixel(i * 32, j * 32);
-                    black_box(pixel);
-                }
-            }
+            let image = render(32, camera, objects.clone());
+            black_box(image);
         });
     }
 
@@ -47,9 +42,8 @@ mod tests {
         camera.look_from = Vec3::new(8.0, 2.0, 10.0);
         camera.look_at = Vec3::new(0.0, 0.75, 0.0);
         camera.up = Vec3::new(0.0, 1.0, 0.0);
-        camera.samples = 100;
-        camera.sample_scale = 1.0 / 100.0;
-        camera.max_depth = 10;
+        camera.samples = 5;
+        camera.max_depth = 5;
         camera.initialize();
         (camera, objects)
     }

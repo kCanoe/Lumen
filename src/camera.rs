@@ -23,7 +23,6 @@ pub struct CameraSettings {
     pub image_width: usize,
     pub image_height: usize,
     pub samples: usize,
-    pub sample_scale: f64,
     pub max_depth: usize,
 }
 
@@ -50,7 +49,6 @@ impl CameraSettings {
             image_width: width,
             image_height: height,
             samples: 5,
-            sample_scale: 0.01,
             max_depth: 3,
         }
     }
