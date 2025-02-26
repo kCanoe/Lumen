@@ -1,105 +1,117 @@
-use std::sync::{Arc, Mutex};
 use std::thread;
 
-use rand::rngs::StdRng;
-use rand::Rng;
-use rand::SeedableRng;
+use rand::rngs::ThreadRng;
 
-use crate::CameraSettings;
-use crate::HitRecord;
-use crate::Image;
-use crate::Interval;
-use crate::ObjectList;
-use crate::Pixel;
-use crate::Ray;
-use crate::Vec3;
+use crate::camera::CameraSettings;
+use crate::image::Image;
+use crate::image::Pixel;
+use crate::objects::HitRecord;
+use crate::objects::ObjectList;
+use crate::ray::Interval;
+use crate::ray::Ray;
+use crate::vec3::Vec3;
 
 use crate::materials::Scatter;
 
-#[inline]
-pub fn get_ray(
-    i: usize,
-    j: usize,
-    s: usize,
-    floats: &Vec<f64>,
-    cam: &CameraSettings,
-) -> Ray {
-    let offset = Vec3::new(floats[s * 2] - 0.5, floats[s * 2 + 1] - 0.5, 0.0);
+use rand::distributions::{Distribution, Uniform};
 
-    let pixel_center = cam.pixel_origin
-        + (j as f64 + offset.x) * cam.pixel_delta_u
-        + (i as f64 + offset.y) * cam.pixel_delta_v;
-
-    let ray_direction = pixel_center - cam.position;
-
-    Ray::new(cam.position, ray_direction)
+pub struct ChunkRenderer {
+    pub objs: ObjectList,
+    pub cam: CameraSettings,
+    pub rng: ThreadRng,
+    pub dist: Uniform<f64>,
 }
 
-#[inline]
-pub fn cast_ray(
-    r: Ray,
-    s: usize,
-    vecs: &Vec<Vec3>,
-    depth: usize,
-    objects: &ObjectList,
-) -> Vec3 {
-    if depth <= 0 {
-        return Vec3::new(0.0, 0.0, 0.0);
-    }
-
-    let mut record = HitRecord::new();
-    let mut hit = false;
-    let mut tmp = HitRecord::new();
-    let mut closest = Interval::new(0.001, f64::INFINITY);
-
-    for object in &objects.objects {
-        if object.hit(&r, &closest, &mut tmp) == true {
-            hit = true;
-            closest.max = tmp.t;
-            record = tmp;
+impl ChunkRenderer {
+    pub fn new(objects: ObjectList, camera: CameraSettings) -> Self {
+        Self {
+            objs: objects,
+            cam: camera,
+            rng: rand::thread_rng(),
+            dist: Uniform::new(0.0, 1.0),
         }
     }
 
-    if hit == true {
+    fn get_ray(&mut self, i: usize, j: usize) -> Ray {
+        let offset = Vec3 {
+            x: self.dist.sample(&mut self.rng) - 0.5,
+            y: self.dist.sample(&mut self.rng) - 0.5,
+            z: 0.0,
+        };
+        let pixel_center = self.cam.pixel_origin
+            + (j as f64 + offset.x) * self.cam.pixel_delta_u
+            + (i as f64 + offset.y) * self.cam.pixel_delta_v;
+        let ray_direction = pixel_center - self.cam.position;
+        Ray::new(self.cam.position, ray_direction)
+    }
+
+    fn check_hit(&self, r: &Ray) -> (bool, HitRecord) {
+        let mut record = HitRecord::new();
+        let mut hit = false;
+        let mut tmp = HitRecord::new();
+        let mut closest = Interval::new(0.001, f64::INFINITY);
+        for object in &self.objs.objects {
+            if object.hit(r, &closest, &mut tmp) == true {
+                hit = true;
+                closest.max = tmp.t;
+                record = tmp;
+            }
+        }
+        (hit, record)
+    }
+
+    fn cast_ray(&self, r: Ray, depth: usize) -> Vec3 {
+        if depth <= 0 {
+            return Vec3::new(0.0, 0.0, 0.0);
+        }
+
+        let (hit, rec) = self.check_hit(&r);
+        if hit != true {
+            let unit_direction = Vec3::unit_vector(r.direction);
+            let a = 0.5 * (unit_direction.y + 1.0);
+            return (1.0 - a) * Vec3::new(0.5, 0.7, 1.0)
+                + a * Vec3::new(1.0, 1.0, 1.0);
+        }
+        let mut at = Vec3::new(0.0, 0.0, 0.0);
         let mut scattered =
             Ray::new(Vec3::new(0.0, 0.0, 0.0), Vec3::new(0.0, 0.0, 0.0));
-        let mut attenuation = Vec3::new(0.0, 0.0, 0.0);
-        if record
-            .mat
-            .scatter(&r, &record, &mut attenuation, &mut scattered)
-        {
-            let cast = cast_ray(scattered, s, vecs, depth - 1, objects);
-            return Vec3 {
-                x: attenuation.x * cast.x,
-                y: attenuation.y * cast.y,
-                z: attenuation.z * cast.z,
-            };
+        match rec.mat.scatter(&r, &rec, &mut at, &mut scattered) {
+            true => {
+                let cast = self.cast_ray(scattered, depth - 1);
+                Vec3::new(at.x * cast.x, at.y * cast.y, at.z * cast.z)
+            }
+            false => Vec3::new(0.0, 0.0, 0.0),
         }
-        return Vec3::new(0.0, 0.0, 0.0);
-    } else {
-        let unit_direction = Vec3::unit_vector(r.direction);
-        let a = 0.5 * (unit_direction.y + 1.0);
-        return (1.0 - a) * Vec3::new(0.5, 0.7, 1.0)
-            + a * Vec3::new(1.0, 1.0, 1.0);
-    }
-}
-
-pub fn process_pixel(
-    i: usize,
-    j: usize,
-    floats: &Vec<f64>,
-    vecs: &Vec<Vec3>,
-    camera: &CameraSettings,
-    objects: &ObjectList,
-) -> Pixel {
-    let mut color = Vec3::new(0.0, 0.0, 0.0);
-
-    for s in 0..camera.samples {
-        let r = get_ray(i, j, s, floats, camera);
-        color += cast_ray(r, s, vecs, camera.max_depth, objects);
     }
 
-    Pixel::from_vec(color * camera.sample_scale)
+    pub fn compute_pixel(&mut self, i: usize, j: usize) -> Pixel {
+        let mut color = Vec3 {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+        };
+        for _ in 0..self.cam.samples {
+            let r = self.get_ray(i, j);
+            color += self.cast_ray(r, self.cam.max_depth);
+        }
+        Pixel::from_vec(color * self.cam.sample_scale)
+    }
+
+    pub fn render_chunk(
+        &mut self,
+        row_start: usize,
+        row_end: usize,
+    ) -> Vec<Pixel> {
+        let width = self.cam.image_width;
+        let pixel_count = width * (row_end - row_start);
+        let mut pixels = vec![Pixel::new(0, 0, 0); pixel_count];
+        for i in row_start..row_end {
+            for j in 0..width {
+                pixels[(i-row_start) * width + j]  = self.compute_pixel(i, j);
+            }
+        }
+        pixels
+    }
 }
 
 pub fn render(
@@ -107,57 +119,28 @@ pub fn render(
     camera: CameraSettings,
     objects: ObjectList,
 ) -> Image {
-    let mut rng = StdRng::from_entropy();
-    let r_floats: Vec<f64> = (0..camera.samples * 2)
-        .map(|_| rng.gen_range(0.0..=1.0))
-        .collect();
-    let r_vecs: Vec<Vec3> = (0..camera.samples * 11)
-        .map(|_| Vec3::random_unit_vector())
-        .collect();
-
-    let a_vecs = Arc::new(r_vecs);
-    let a_floats = Arc::new(r_floats);
-    let (a_cam, a_obj) = (Arc::new(camera), Arc::new(objects));
-
-    let img = Arc::new(Mutex::new(Image::new(
-        camera.image_width,
-        camera.image_height,
-    )));
-
     let mut handles = Vec::with_capacity(n_threads);
-
     let chunk_rows = camera.image_height / n_threads;
-    let chunk_cols = camera.image_width;
-
     for n in 0..n_threads {
-        let img_clone = Arc::clone(&img);
-        let cam = Arc::clone(&a_cam);
-        let obj = Arc::clone(&a_obj);
-        let floats = Arc::clone(&a_floats);
-        let vecs = Arc::clone(&a_vecs);
-
+        let (obj, cam) = (objects.clone(), camera.clone());
         let handle = thread::spawn(move || {
-            let (start_row, end_row) =
-                (n * chunk_rows, n * chunk_rows + chunk_rows);
-            let (start_col, end_col) = (0, chunk_cols);
-            let mut img_local = img_clone.lock().unwrap();
-
-            for i in start_row..end_row {
-                for j in start_col..end_col {
-                    let px = process_pixel(i, j, &floats, &vecs, &cam, &obj);
-                    img_local.set(i, j, px);
-                }
-            }
+            let mut renderer = ChunkRenderer::new(obj, cam);
+            let pixels = renderer.render_chunk(n * chunk_rows, (n+1) * chunk_rows);
+            pixels
         });
         handles.push(handle);
     }
-
+    let pixel_count = camera.image_width * camera.image_height;
+    let mut image: Vec<Pixel> = Vec::with_capacity(pixel_count);
     for handle in handles {
-        handle.join().unwrap();
+        let pixels = handle.join().unwrap();
+        for pixel in pixels {
+            image.push(pixel);
+        }
     }
-
-    Arc::try_unwrap(img)
-        .ok()
-        .and_then(|mutex| mutex.into_inner().ok())
-        .unwrap()
+    Image {
+        data: image,
+        rows: camera.image_height,
+        cols: camera.image_width,
+    }
 }

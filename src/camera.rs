@@ -1,4 +1,4 @@
-use crate::Vec3;
+use crate::vec3::Vec3;
 
 #[derive(Debug, Copy, Clone)]
 pub struct CameraSettings {
@@ -49,9 +49,9 @@ impl CameraSettings {
             pixel_origin: Vec3::new(0.0, 0.0, 0.0),
             image_width: width,
             image_height: height,
-            samples: 100,
+            samples: 5,
             sample_scale: 0.01,
-            max_depth: 10,
+            max_depth: 3,
         }
     }
 

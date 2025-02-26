@@ -1,6 +1,7 @@
+use crate::objects::HitRecord;
+use crate::ray::Ray;
+use crate::vec3::Vec3;
 use rand::distributions::{Distribution, Uniform};
-
-use crate::{HitRecord, Ray, Vec3};
 
 pub fn random_double() -> f64 {
     let dist = Uniform::new(0.0, 1.0);

@@ -1,8 +1,6 @@
-use crate::Diffuse;
-use crate::Interval;
-use crate::Material;
-use crate::Ray;
-use crate::Vec3;
+use crate::materials::{Diffuse, Material};
+use crate::ray::{Interval, Ray};
+use crate::vec3::Vec3;
 
 #[derive(Debug, Clone, Copy)]
 pub struct HitRecord {

@@ -1,6 +1,5 @@
+use crate::vec3::Vec3;
 use std::fmt;
-
-use crate::Vec3;
 
 #[derive(Clone)]
 pub struct Pixel {
