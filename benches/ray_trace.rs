@@ -10,7 +10,7 @@ mod tests {
     use Lumen::render::render;
     use Lumen::render::ChunkRenderer;
     use Lumen::vec3::Vec3;
-    
+
     #[bench]
     fn bench_ray_trace(b: &mut Bencher) {
         let (camera, objects) = setup();

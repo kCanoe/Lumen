@@ -1,17 +1,18 @@
 use std::thread;
 
-use rand::rngs::ThreadRng;
 use rand::distributions::{Distribution, Uniform};
+use rand::rngs::ThreadRng;
 
 use crate::camera::CameraSettings;
 use crate::image::Image;
 use crate::image::Pixel;
+use crate::materials::Scatter;
 use crate::objects::HitRecord;
 use crate::objects::ObjectList;
+use crate::objects::Physical;
 use crate::ray::Interval;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
-use crate::materials::Scatter;
 
 pub struct ChunkRenderer {
     pub objs: ObjectList,
@@ -112,7 +113,7 @@ impl ChunkRenderer {
         let mut pixels = vec![Pixel::new(0, 0, 0); pixel_count];
         for i in row_start..row_end {
             for j in 0..cols {
-                pixels[(i-row_start) * cols + j]  = self.compute_pixel(i, j);
+                pixels[(i - row_start) * cols + j] = self.compute_pixel(i, j);
             }
         }
         pixels
@@ -130,7 +131,11 @@ pub fn render(
         let obj = objects.clone();
         let handle = thread::spawn(move || {
             let mut renderer = ChunkRenderer::new(obj, &camera);
-            renderer.render_chunk(n * chunk_rows, (n+1) * chunk_rows, camera.image_width)
+            renderer.render_chunk(
+                n * chunk_rows,
+                (n + 1) * chunk_rows,
+                camera.image_width,
+            )
         });
         handles.push(handle);
     }
