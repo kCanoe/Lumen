@@ -94,7 +94,6 @@ impl Scatter for Dielectric {
         let cos_theta = (-1.0 * unit_direction * record.normal).min(1.0);
         let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
         let cannot_refract = ri * sin_theta > 1.0;
-        // schlick approximation for dielectric refraction
         let mut r0 = (1.0 - ri) / (1.0 + ri);
         r0 = r0 * r0;
         r0 = r0 + (1.0 - r0) * (1.0 - cos_theta).powi(5);
