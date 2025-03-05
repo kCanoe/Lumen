@@ -55,6 +55,7 @@ impl ObjectList {
 pub enum Object {
     Sphere(Sphere),
     Cube(Cube),
+    Quad(Quad),
 }
 
 #[derive(Debug, Clone)]
@@ -68,6 +69,14 @@ pub struct Cube {
 pub struct Sphere {
     pub radius: f64,
     pub center: Vec3,
+    pub mat: Material,
+}
+
+#[derive(Debug, Clone)]
+pub struct Quad {
+    pub q: Vec3,
+    pub u: Vec3,
+    pub v: Vec3,
     pub mat: Material,
 }
 
@@ -95,13 +104,36 @@ impl Sphere {
     }
 }
 
+impl Quad {
+    pub fn new(q: Vec3, u: Vec3, v: Vec3, mat: Material) -> Self {
+        Self { q, u, v, mat }
+    }
+}
+
+impl Physical for Quad {
+    fn hit(&self, r: &Ray, rt: &Interval, record: &mut HitRecord) -> bool {
+        let normal =  Vec3::unit_vector(Vec3::cross(self.u, self.v));
+        let quot = r.direction * normal;
+        if quot.abs() < 0.00000001 {
+            return false;
+        }
+        let t = (normal * self.q - (normal * r.origin)) / quot;
+        if rt.contains(t) == false {
+            return false;
+        }
+        record.t = t;
+        record.point = r.at(t);
+        record.mat = self.mat;
+        record.set_face_normal(r, normal);
+        return true;
+    }
+}
+
 impl Physical for Cube {
     fn hit(&self, r: &Ray, rt: &Interval, record: &mut HitRecord) -> bool {
         // solve for time points t where the ray will intersect with the cube.
         // Early return false if there are no solutions. Otherwise, return true
         // after setting the passed in record.
-
-        
 
         // set the settings for the record for the intersection with the cube
         // set record.t to the solved t, record.point to r.at(t), and

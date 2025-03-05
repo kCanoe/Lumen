@@ -34,6 +34,6 @@ fn main() {
     camera.initialize();
 
     // create and print image
-    let image = render(32, camera, objects);
+    let image = render(8, camera, objects);
     image.print();
 }
