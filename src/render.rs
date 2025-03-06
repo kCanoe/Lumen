@@ -3,7 +3,7 @@ use std::thread;
 use rand::distributions::{Distribution, Uniform};
 use rand::rngs::ThreadRng;
 
-use crate::camera::CameraSettings;
+use crate::camera::Camera;
 use crate::image::Image;
 use crate::image::Pixel;
 use crate::materials::Scatter;
@@ -27,7 +27,7 @@ pub struct ChunkRenderer {
 }
 
 impl ChunkRenderer {
-    pub fn new(objects: ObjectList, camera: &CameraSettings) -> Self {
+    pub fn new(objects: ObjectList, camera: &Camera) -> Self {
         Self {
             objs: objects,
             pixel_origin: camera.pixel_origin,
@@ -120,11 +120,7 @@ impl ChunkRenderer {
     }
 }
 
-pub fn render(
-    n_threads: usize,
-    camera: CameraSettings,
-    objects: ObjectList,
-) -> Image {
+pub fn render(n_threads: usize, camera: Camera, objects: ObjectList) -> Image {
     let mut handles = Vec::with_capacity(n_threads);
     let chunk_rows = camera.image_height / n_threads;
     for n in 0..n_threads {

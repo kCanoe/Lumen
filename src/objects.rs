@@ -23,14 +23,12 @@ impl HitRecord {
             front_facing: false,
         }
     }
-
+        
     pub fn set_face_normal(&mut self, ray: &Ray, outward_normal: Vec3) {
-        if ray.direction * outward_normal < 0.0 {
-            self.normal = outward_normal;
-            self.front_facing = true;
-        } else {
-            self.normal = -1.0 * outward_normal;
-            self.front_facing = false;
+        let normal_direction = ray.direction * outward_normal < 0.0;
+        (self.normal, self.front_facing) = match normal_direction {
+            true => (outward_normal, true),
+            false => (-1.0 * outward_normal, false),
         }
     }
 }
@@ -131,13 +129,22 @@ impl Physical for Quad {
 
 impl Physical for Cube {
     fn hit(&self, r: &Ray, rt: &Interval, record: &mut HitRecord) -> bool {
-        // solve for time points t where the ray will intersect with the cube.
-        // Early return false if there are no solutions. Otherwise, return true
-        // after setting the passed in record.
-
-        // set the settings for the record for the intersection with the cube
-        // set record.t to the solved t, record.point to r.at(t), and
-        // record.mat to self.mat. Set the face normal for the record as well.
+        let quads: Vec<Quad> = Vec::new();
+        let mut tmp = HitRecord::new();
+        let mut hit = false;
+        record.t = std::f64::MAX;
+        for quad in quads {
+            if quad.hit(r, rt, &mut tmp) == true && tmp.t < record.t{
+                record.t = tmp.t;
+                hit = true;
+            }
+        }
+        if !hit {
+            return false;
+        }
+        record.t = tmp.t;
+        record.point = r.at(tmp.t);
+        record.mat = self.mat;
         return true;
     }
 }
