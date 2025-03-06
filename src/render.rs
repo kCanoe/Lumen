@@ -21,15 +21,15 @@ pub struct Renderer {
 }
 
 pub struct ChunkRenderer {
-    pub objs: ObjectList,
-    pub pixel_origin: Vec3,
-    pub pixel_du: Vec3,
-    pub pixel_dv: Vec3,
-    pub cam_position: Vec3,
-    pub samples: usize,
-    pub depth: usize,
-    pub rng: ThreadRng,
-    pub dist: Uniform<f64>,
+    objs: ObjectList,
+    pixel_origin: Vec3,
+    pixel_du: Vec3,
+    pixel_dv: Vec3,
+    cam_position: Vec3,
+    samples: usize,
+    depth: usize,
+    rng: ThreadRng,
+    dist: Uniform<f64>,
 }
 
 impl Renderer {
@@ -143,7 +143,7 @@ impl ChunkRenderer {
         }
     }
 
-    pub fn compute_pixel(&mut self, i: usize, j: usize) -> Pixel {
+    fn compute_pixel(&mut self, i: usize, j: usize) -> Pixel {
         let (samples, scale) = (self.samples, 1.0 / self.samples as f64);
         let mut color = Vec3::new(0.0, 0.0, 0.0);
         for _ in 0..samples {
