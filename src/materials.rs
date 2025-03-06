@@ -32,6 +32,18 @@ pub enum Material {
     Dielectric(Dielectric),
 }
 
+impl Material {
+    pub fn new_diffuse(albedo: Vec3) -> Self {
+        Self::Diffuse(Diffuse { albedo })
+    }
+    pub fn new_metal(albedo: Vec3, fuzz: f64) -> Self {
+        Self::Metal(Metal { albedo, fuzz })
+    }
+    pub fn new_dielectric(refraction: f64) -> Self {
+        Self::Dielectric(Dielectric { refraction })
+    }
+}
+
 pub trait Scatter {
     fn scatter(
         &self,

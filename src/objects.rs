@@ -47,6 +47,9 @@ impl ObjectList {
     pub fn add(&mut self, obj: Sphere) {
         self.objects.push(obj);
     }
+    pub fn add_sphere(&mut self, r: f64, position: Vec3, mat: Material) {
+        self.objects.push(Sphere::new(r, position, mat));
+    }
 }
 
 #[derive(Debug, Clone)]

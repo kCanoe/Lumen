@@ -39,16 +39,16 @@ impl CameraBuilder {
         self.vfov = Some(fov);
         self
     }
-    pub fn position(&mut self, position: Vec3) -> &mut Self {
-        self.position = Some(position);
+    pub fn position(&mut self, x: f64, y: f64, z: f64) -> &mut Self {
+        self.position = Some(Vec3::new(x, y, z));
         self
     }
-    pub fn target(&mut self, target: Vec3) -> &mut Self {
-        self.target = Some(target);
+    pub fn target(&mut self, x: f64, y: f64, z: f64) -> &mut Self {
+        self.target = Some(Vec3::new(x, y, z));
         self
     }
-    pub fn upward(&mut self, upward: Vec3) -> &mut Self {
-        self.up = Some(upward);
+    pub fn upward(&mut self, x: f64, y: f64, z: f64) -> &mut Self {
+        self.up = Some(Vec3::new(x, y, z));
         self
     }
     pub fn samples(&mut self, samples: usize) -> &mut Self {
