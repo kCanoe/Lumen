@@ -14,6 +14,12 @@ use crate::ray::Interval;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
 
+pub struct Renderer {
+    camera: Camera,
+    objects: ObjectList,
+    thread_count: usize,
+}
+
 pub struct ChunkRenderer {
     pub objs: ObjectList,
     pub pixel_origin: Vec3,
@@ -24,6 +30,50 @@ pub struct ChunkRenderer {
     pub depth: usize,
     pub rng: ThreadRng,
     pub dist: Uniform<f64>,
+}
+
+impl Renderer {
+    pub fn new(
+        camera: Camera,
+        objects: ObjectList,
+        thread_count: usize,
+    ) -> Self {
+        Self {
+            camera,
+            objects,
+            thread_count,
+        }
+    }
+
+    pub fn render(self) -> Image {
+        let mut handles = Vec::with_capacity(self.thread_count);
+        let chunk_rows = self.camera.image_height / self.thread_count;
+        for n in 0..self.thread_count {
+            let objects = self.objects.clone();
+            let handle = thread::spawn(move || {
+                let mut renderer = ChunkRenderer::new(objects, &self.camera);
+                renderer.render_chunk(
+                    n * chunk_rows,
+                    (n + 1) * chunk_rows,
+                    self.camera.image_width,
+                )
+            });
+            handles.push(handle);
+        }
+        let pixel_count = self.camera.image_width * self.camera.image_height;
+        let mut image: Vec<Pixel> = Vec::with_capacity(pixel_count);
+        for handle in handles {
+            let pixels = handle.join().unwrap();
+            for pixel in pixels {
+                image.push(pixel);
+            }
+        }
+        Image {
+            data: image,
+            rows: self.camera.image_height,
+            cols: self.camera.image_width,
+        }
+    }
 }
 
 impl ChunkRenderer {
@@ -117,35 +167,5 @@ impl ChunkRenderer {
             }
         }
         pixels
-    }
-}
-
-pub fn render(n_threads: usize, camera: Camera, objects: ObjectList) -> Image {
-    let mut handles = Vec::with_capacity(n_threads);
-    let chunk_rows = camera.image_height / n_threads;
-    for n in 0..n_threads {
-        let obj = objects.clone();
-        let handle = thread::spawn(move || {
-            let mut renderer = ChunkRenderer::new(obj, &camera);
-            renderer.render_chunk(
-                n * chunk_rows,
-                (n + 1) * chunk_rows,
-                camera.image_width,
-            )
-        });
-        handles.push(handle);
-    }
-    let pixel_count = camera.image_width * camera.image_height;
-    let mut image: Vec<Pixel> = Vec::with_capacity(pixel_count);
-    for handle in handles {
-        let pixels = handle.join().unwrap();
-        for pixel in pixels {
-            image.push(pixel);
-        }
-    }
-    Image {
-        data: image,
-        rows: camera.image_height,
-        cols: camera.image_width,
     }
 }

@@ -15,15 +15,12 @@ pub struct Camera {
 
 #[derive(Default)]
 pub struct CameraBuilder {
-    // resolution and shape of render
     image_width: Option<usize>,
     image_height: Option<usize>,
-    // optical settings for the camera
     vfov: Option<f64>,
     position: Option<Vec3>,
     target: Option<Vec3>,
     up: Option<Vec3>,
-    // quality settings for the render
     samples: Option<usize>,
     max_depth: Option<usize>,
 }

@@ -23,7 +23,7 @@ impl HitRecord {
             front_facing: false,
         }
     }
-        
+
     pub fn set_face_normal(&mut self, ray: &Ray, outward_normal: Vec3) {
         let normal_direction = ray.direction * outward_normal < 0.0;
         (self.normal, self.front_facing) = match normal_direction {
@@ -110,7 +110,7 @@ impl Quad {
 
 impl Physical for Quad {
     fn hit(&self, r: &Ray, rt: &Interval, record: &mut HitRecord) -> bool {
-        let normal =  Vec3::unit_vector(Vec3::cross(self.u, self.v));
+        let normal = Vec3::unit_vector(Vec3::cross(self.u, self.v));
         let quot = r.direction * normal;
         if quot.abs() < 0.00000001 {
             return false;
@@ -134,7 +134,7 @@ impl Physical for Cube {
         let mut hit = false;
         record.t = std::f64::MAX;
         for quad in quads {
-            if quad.hit(r, rt, &mut tmp) == true && tmp.t < record.t{
+            if quad.hit(r, rt, &mut tmp) == true && tmp.t < record.t {
                 record.t = tmp.t;
                 hit = true;
             }

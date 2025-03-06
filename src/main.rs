@@ -1,29 +1,26 @@
 use lumen::camera::CameraBuilder;
 use lumen::materials::{Dielectric, Diffuse, Material, Metal};
 use lumen::objects::{ObjectList, Sphere};
-use lumen::render::render;
+use lumen::render::Renderer;
 use lumen::vec3::Vec3;
 
 fn main() {
-    let mut objects = ObjectList::new(Vec::new());
-
     let ground = Material::Diffuse(Diffuse {
         albedo: Vec3::new(0.5, 0.5, 0.5),
     });
-
-    objects.add(Sphere::new(1000.0, Vec3::new(0.0, -1000.0, 0.0), ground));
-
     let mat1 = Material::Dielectric(Dielectric { refraction: 1.50 });
-    objects.add(Sphere::new(1.0, Vec3::new(0.0, 1.0, 0.0), mat1));
     let mat2 = Material::Diffuse(Diffuse {
         albedo: Vec3::new(0.2, 0.5, 0.7),
     });
-    objects.add(Sphere::new(1.0, Vec3::new(-2.0, 1.0, 0.0), mat2));
     let mat3 = Material::Metal(Metal {
         albedo: Vec3::new(0.2, 0.7, 0.5),
         fuzz: 0.0,
     });
 
+    let mut objects = ObjectList::new(Vec::new());
+    objects.add(Sphere::new(1000.0, Vec3::new(0.0, -1000.0, 0.0), ground));
+    objects.add(Sphere::new(1.0, Vec3::new(0.0, 1.0, 0.0), mat1));
+    objects.add(Sphere::new(1.0, Vec3::new(-2.0, 1.0, 0.0), mat2));
     objects.add(Sphere::new(1.0, Vec3::new(2.0, 1.0, 0.0), mat3));
 
     let camera = CameraBuilder::new()
@@ -36,6 +33,7 @@ fn main() {
         .max_depth(10)
         .build();
 
-    let image = render(8, camera, objects);
+    let image = Renderer::new(camera, objects, 8).render();
+
     image.print();
 }
