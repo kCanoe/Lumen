@@ -1,3 +1,5 @@
+use std::fmt::Formatter;
+
 use crate::vec3::Vec3;
 use std::fmt;
 
@@ -54,14 +56,19 @@ impl Image {
     pub fn set(&mut self, i: usize, j: usize, p: Pixel) {
         self.data[i * self.cols + j] = p;
     }
+}
 
-    pub fn print(&self) {
-        print!("P3\n{} {}\n255\n", self.cols, self.rows);
+impl fmt::Display for Image {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let mut data = String::with_capacity((12 * self.cols + 1) * self.rows);
         for i in 0..self.rows {
             for j in 0..self.cols - 1 {
-                print!("{} ", self.get(i, j));
+                data.push_str(&format!("{} ", self.get(i, j)));
             }
-            print!("{}\n", self.get(i, self.cols - 1));
+            data.push_str(&format!("{}\n", self.get(i, self.cols - 1)));
         }
-    }
+        write!(f, "P3\n{} {}\n255\n{}", self.cols, self.rows, data)
+    } 
 }
+
+

@@ -29,5 +29,6 @@ fn main() {
 
     let image = Renderer::new(camera, objects, 8).render();
 
-    image.print();
+    //image.print();
+    println!("{image}");
 }
