@@ -21,9 +21,9 @@ fn main() {
         .resolution(1024, 576)
         .vfov(90.0)
         .target(0.0, 0.0, -1.0)
-        .position(-2.0, 2.0, 1.0)
+        .position(3.0, 2.0, 3.0)
         .upward(0.0, 1.0, 0.0)
-        .samples(100)
+        .samples(500)
         .max_depth(10)
         .build();
 

@@ -1,3 +1,3 @@
-# Lumen is a ray tracing based rendering engine built in rust
+# A ray tracer written in rust
 An example render:
 ![example](./example.png)
