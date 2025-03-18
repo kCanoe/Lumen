@@ -60,13 +60,12 @@ impl Image {
 
 impl fmt::Display for Image {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let mut data = String::with_capacity((12 * self.cols + 1) * self.rows);
-        for i in 0..self.rows {
-            for j in 0..self.cols - 1 {
-                data.push_str(&format!("{} ", self.get(i, j)));
-            }
-            data.push_str(&format!("{}\n", self.get(i, self.cols - 1)));
-        }
+        let data = (0..self.rows).map(|r| {
+            (0..self.cols)
+                .map(|c| format!("{}", self.get(r, c)))
+                .collect::<Vec<String>>().join(" ")
+        })
+        .collect::<Vec<String>>().join("\n");
         write!(f, "P3\n{} {}\n255\n{}", self.cols, self.rows, data)
     } 
 }
