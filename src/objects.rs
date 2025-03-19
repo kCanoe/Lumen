@@ -6,6 +6,8 @@ use crate::vec3::Vec3;
 pub struct HitRecord {
     pub point: Vec3,
     pub normal: Vec3,
+    pub u: f64,
+    pub v: f64,
     pub t: f64,
     pub mat: Option<Material>,
     pub front_facing: bool,
@@ -16,6 +18,8 @@ impl HitRecord {
         HitRecord {
             point: Vec3::default(),
             normal: Vec3::default(),
+            u: 0.0,
+            v: 0.0,
             t: 0.0,
             mat: None,
             front_facing: false,
@@ -33,20 +37,23 @@ impl HitRecord {
 
 #[derive(Debug, Clone)]
 pub struct ObjectList {
-    pub objects: Vec<Sphere>,
+    pub objects: Vec<Object>,
 }
 
 impl ObjectList {
     #[allow(dead_code)]
-    pub fn new(objects: Vec<Sphere>) -> Self {
+    pub fn new(objects: Vec<Object>) -> Self {
         ObjectList { objects }
     }
 
-    pub fn add(&mut self, obj: Sphere) {
-        self.objects.push(obj);
-    }
     pub fn add_sphere(&mut self, r: f64, position: Vec3, mat: Material) {
-        self.objects.push(Sphere::new(r, position, mat));
+        let sp = Object::Sphere(Sphere::new(r, position, mat));
+        self.objects.push(sp);
+    }
+
+    pub fn add_quad(&mut self, q: Vec3, u: Vec3, v: Vec3, mat: Material) {
+        let quad = Object::Quad(Quad::new(q, u, v, mat));
+        self.objects.push(quad);
     }
 }
 
@@ -83,6 +90,16 @@ pub trait Physical {
     fn hit(&self, r: &Ray, rt: &Interval, record: &mut HitRecord) -> bool;
 }
 
+impl Physical for Object {
+    fn hit(&self, r: &Ray, rt: &Interval, record: &mut HitRecord) -> bool {
+        match self {
+            Self::Sphere(obj) => obj.hit(r, rt, record),
+            Self::Quad(obj) => obj.hit(r, rt, record),
+            Self::Cube(obj) => obj.hit(r, rt, record),
+        }
+    }
+}
+
 impl Cube {
     pub fn new(length: f64, center: Vec3, mat: Material) -> Self {
         Self {
@@ -112,6 +129,7 @@ impl Quad {
 impl Physical for Quad {
     fn hit(&self, r: &Ray, rt: &Interval, record: &mut HitRecord) -> bool {
         let normal = Vec3::unit_vector(Vec3::cross(self.u, self.v));
+        let w = normal / (normal * normal);
         let quot = r.direction * normal;
         if quot.abs() < 0.00000001 {
             return false;
@@ -120,11 +138,30 @@ impl Physical for Quad {
         if rt.contains(t) == false {
             return false;
         }
+        let intersection = r.at(t);
+        let planar_hit_vec = intersection - self.q;
+        let alpha = w * Vec3::cross(planar_hit_vec, self.v);
+        let beta = w * Vec3::cross(self.u, planar_hit_vec);
+        if !Self::is_interior(alpha, beta, record) {
+            return false;
+        }
         record.t = t;
         record.point = r.at(t);
         record.mat = Some(self.mat);
         record.set_face_normal(r, normal);
         return true;
+    }
+}
+
+impl Quad {
+    fn is_interior(a: f64, b: f64, rec: &mut HitRecord) -> bool {
+        let unit = Interval::new(0.0, 1.0);
+        if unit.contains(a) || unit.contains(b) {
+            return false;
+        }
+        rec.u = a;
+        rec.v = a;
+        true
     }
 }
 
