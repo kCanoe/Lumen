@@ -4,10 +4,10 @@ use lumen::objects::ObjectList;
 use lumen::render::Renderer;
 use lumen::vec3::Vec3;
 
-use std::io::Write;
-use std::path::PathBuf;
 use std::env;
 use std::fs::File;
+use std::io::Write;
+use std::path::PathBuf;
 
 fn setup() -> (Camera, ObjectList, usize) {
     let ground = Material::new_diffuse(Vec3::new(0.5, 0.5, 0.5));
@@ -22,8 +22,17 @@ fn setup() -> (Camera, ObjectList, usize) {
     objects.add_sphere(1.0, Vec3::new(-2.0, 1.0, 0.0), mat2);
     objects.add_sphere(1.0, Vec3::new(2.0, 1.0, 0.0), mat3);
 
+    let red = Material::new_diffuse(Vec3::new(1.0, 0.2, 0.2));
+
+    objects.add_quad(
+        Vec3::new(-3.0, -2.0, 5.0),
+        Vec3::new(0.0, 0.0, -4.0),
+        Vec3::new(0.0, 4.0, 0.0),
+        red,
+    );
+
     let camera = CameraBuilder::new()
-        .resolution(4096, 2304)
+        .resolution(1024, 576)
         .vfov(90.0)
         .target(0.0, 0.0, -1.0)
         .position(3.0, 2.0, 3.0)
@@ -45,8 +54,6 @@ fn main() -> std::io::Result<()> {
 
     let output_text = format!("{image}");
     output.write_all(output_text.as_bytes())?;
-    
+
     Ok(())
 }
-
-
