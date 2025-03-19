@@ -14,21 +14,26 @@ use crate::ray::Interval;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
 
+use std::sync::Arc;
+
 pub struct Renderer {
-    camera: Camera,
-    objects: ObjectList,
+    camera: Arc<Camera>,
+    objects: Arc<ObjectList>,
     thread_count: usize,
 }
 
 pub struct ChunkRenderer {
-    objs: ObjectList,
-    pixel_origin: Vec3,
-    pixel_du: Vec3,
-    pixel_dv: Vec3,
-    cam_position: Vec3,
-    samples: usize,
-    depth: usize,
-    dist: Uniform<f64>,
+    objs: Arc<ObjectList>,
+    cam: Arc<Camera>,
+}
+
+impl ChunkRenderer {
+    pub fn new(objects: &Arc<ObjectList>, camera: &Arc<Camera>) -> Self {
+        Self {
+            objs: Arc::clone(objects),
+            cam: Arc::clone(camera),
+        }
+    }
 }
 
 impl Renderer {
@@ -38,8 +43,8 @@ impl Renderer {
         thread_count: usize,
     ) -> Self {
         Self {
-            camera,
-            objects,
+            camera: Arc::new(camera),
+            objects: Arc::new(objects),
             thread_count,
         }
     }
@@ -48,14 +53,9 @@ impl Renderer {
         let mut handles = Vec::with_capacity(self.thread_count);
         let chunk_rows = self.camera.image_height / self.thread_count;
         for n in 0..self.thread_count {
-            let objects = self.objects.clone();
+            let renderer = ChunkRenderer::new(&self.objects, &self.camera);
             let handle = thread::spawn(move || {
-                let renderer = ChunkRenderer::new(objects, &self.camera);
-                renderer.render_chunk(
-                    n * chunk_rows,
-                    (n + 1) * chunk_rows,
-                    self.camera.image_width,
-                )
+                renderer.render_chunk(n * chunk_rows, (n + 1) * chunk_rows)
             });
             handles.push(handle);
         }
@@ -72,25 +72,12 @@ impl Renderer {
 }
 
 impl ChunkRenderer {
-    pub fn new(objects: ObjectList, camera: &Camera) -> Self {
-        Self {
-            objs: objects,
-            pixel_origin: camera.pixel_origin,
-            pixel_du: camera.pixel_delta_u,
-            pixel_dv: camera.pixel_delta_v,
-            cam_position: camera.position,
-            samples: camera.samples,
-            depth: camera.max_depth,
-            dist: Uniform::new(0.0, 1.0),
-        }
-    }
-
     fn get_ray(&self, i: usize, j: usize) -> Ray {
-        let ray_direction = self.pixel_origin
-            + (j as f64) * self.pixel_du
-            + (i as f64) * self.pixel_dv
-            - self.cam_position;
-        Ray::new(self.cam_position, ray_direction)
+        let ray_direction = self.cam.pixel_origin
+            + (j as f64) * self.cam.pixel_delta_u
+            + (i as f64) * self.cam.pixel_delta_v
+            - self.cam.position;
+        Ray::new(self.cam.position, ray_direction)
     }
 
     fn check_hit(&self, r: &Ray) -> (bool, HitRecord) {
@@ -132,23 +119,22 @@ impl ChunkRenderer {
     }
 
     fn compute_pixel(&self, i: usize, j: usize) -> Pixel {
-        let (samples, scale) = (self.samples, 1.0 / self.samples as f64);
+        let (samples, scale) =
+            (self.cam.samples, 1.0 / self.cam.samples as f64);
         let mut color = Vec3::default();
         for _ in 0..samples {
             let r = self.get_ray(i, j);
-            color += self.cast_ray(r, self.depth);
+            color += self.cast_ray(r, self.cam.max_depth);
         }
         Pixel::from(color * scale)
     }
 
-    pub fn render_chunk(
-        &self,
-        row_start: usize,
-        row_end: usize,
-        cols: usize,
-    ) -> Vec<Pixel> {
+    pub fn render_chunk(&self, row_start: usize, row_end: usize) -> Vec<Pixel> {
         (row_start..row_end)
-            .flat_map(|r| (0..cols).map(move |c| (&self).compute_pixel(r, c)))
+            .flat_map(|r| {
+                (0..self.cam.image_width)
+                    .map(move |c| (&self).compute_pixel(r, c))
+            })
             .collect::<Vec<_>>()
     }
 }
