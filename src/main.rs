@@ -1,10 +1,15 @@
-use lumen::camera::CameraBuilder;
+use lumen::camera::{Camera, CameraBuilder};
 use lumen::materials::Material;
 use lumen::objects::ObjectList;
 use lumen::render::Renderer;
 use lumen::vec3::Vec3;
 
-fn main() {
+use std::io::Write;
+use std::path::PathBuf;
+use std::env;
+use std::fs::File;
+
+fn setup() -> (Camera, ObjectList, usize) {
     let ground = Material::new_diffuse(Vec3::new(0.5, 0.5, 0.5));
     let mat1 = Material::new_dielectric(1.50);
     let mat2 = Material::new_diffuse(Vec3::new(0.2, 0.5, 0.7));
@@ -27,7 +32,21 @@ fn main() {
         .max_depth(10)
         .build();
 
-    let image = Renderer::new(camera, objects, 8).render();
-
-    println!("{image}");
+    (camera, objects, 8)
 }
+
+fn main() -> std::io::Result<()> {
+    let args: Vec<String> = env::args().collect();
+    let output_path = PathBuf::from(args[1].as_str());
+    let mut output = File::create(output_path)?;
+
+    let (camera, objects, thread_count) = setup();
+    let image = Renderer::new(camera, objects, thread_count).render();
+
+    let output_text = format!("{image}");
+    output.write_all(output_text.as_bytes())?;
+    
+    Ok(())
+}
+
+
