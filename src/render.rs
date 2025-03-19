@@ -114,7 +114,7 @@ impl ChunkRenderer {
 
     fn cast_ray(&self, r: Ray, depth: usize) -> Vec3 {
         if depth <= 0 {
-            return Vec3::new(0.0, 0.0, 0.0);
+            return Vec3::default();
         }
 
         let (hit, rec) = self.check_hit(&r);
@@ -124,21 +124,21 @@ impl ChunkRenderer {
             return (1.0 - a) * Vec3::new(0.5, 0.7, 1.0)
                 + a * Vec3::new(1.0, 1.0, 1.0);
         }
-        let mut at = Vec3::new(0.0, 0.0, 0.0);
+        let mut at = Vec3::default();
         let mut scattered =
-            Ray::new(Vec3::new(0.0, 0.0, 0.0), Vec3::new(0.0, 0.0, 0.0));
+            Ray::new(Vec3::default(), Vec3::default());
         match rec.mat.scatter(&r, &rec, &mut at, &mut scattered) {
             true => {
                 let cast = self.cast_ray(scattered, depth - 1);
                 Vec3::new(at.x * cast.x, at.y * cast.y, at.z * cast.z)
             }
-            false => Vec3::new(0.0, 0.0, 0.0),
+            false => Vec3::default(),
         }
     }
 
     fn compute_pixel(&self, i: usize, j: usize) -> Pixel {
         let (samples, scale) = (self.samples, 1.0 / self.samples as f64);
-        let mut color = Vec3::new(0.0, 0.0, 0.0);
+        let mut color = Vec3::default();
         for _ in 0..samples {
             let r = self.get_ray(i, j);
             color += self.cast_ray(r, self.depth);

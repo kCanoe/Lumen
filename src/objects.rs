@@ -14,11 +14,11 @@ pub struct HitRecord {
 impl HitRecord {
     pub fn new() -> Self {
         HitRecord {
-            point: Vec3::new(0.0, 0.0, 0.0),
-            normal: Vec3::new(0.0, 0.0, 0.0),
+            point: Vec3::default(),
+            normal: Vec3::default(),
             t: 0.0,
             mat: Material::Diffuse(Diffuse {
-                albedo: Vec3::new(0.0, 0.0, 0.0),
+                albedo: Vec3::default(),
             }),
             front_facing: false,
         }

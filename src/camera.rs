@@ -98,13 +98,13 @@ impl CameraBuilder {
 }
 
 impl Camera {
-    pub fn new() -> Self {
+    pub fn default() -> Self {
         Camera {
-            position: Vec3::new(0.0, 0.0, 0.0),
-            target: Vec3::new(0.0, 0.0, 0.0),
-            pixel_delta_u: Vec3::new(0.0, 0.0, 0.0),
-            pixel_delta_v: Vec3::new(0.0, 0.0, 0.0),
-            pixel_origin: Vec3::new(0.0, 0.0, 0.0),
+            position: Vec3::default(),
+            target: Vec3::default(),
+            pixel_delta_u: Vec3::default(),
+            pixel_delta_v: Vec3::default(),
+            pixel_origin: Vec3::default(),
             image_width: 0,
             image_height: 0,
             samples: 0,
