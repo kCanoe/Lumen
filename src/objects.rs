@@ -1,4 +1,4 @@
-use crate::materials::{Diffuse, Material};
+use crate::materials::Material;
 use crate::ray::{Interval, Ray};
 use crate::vec3::Vec3;
 
@@ -7,19 +7,17 @@ pub struct HitRecord {
     pub point: Vec3,
     pub normal: Vec3,
     pub t: f64,
-    pub mat: Material,
+    pub mat: Option<Material>,
     pub front_facing: bool,
 }
 
 impl HitRecord {
-    pub fn new() -> Self {
+    pub fn default() -> Self {
         HitRecord {
             point: Vec3::default(),
             normal: Vec3::default(),
             t: 0.0,
-            mat: Material::Diffuse(Diffuse {
-                albedo: Vec3::default(),
-            }),
+            mat: None,
             front_facing: false,
         }
     }
@@ -124,7 +122,7 @@ impl Physical for Quad {
         }
         record.t = t;
         record.point = r.at(t);
-        record.mat = self.mat;
+        record.mat = Some(self.mat);
         record.set_face_normal(r, normal);
         return true;
     }
@@ -133,7 +131,7 @@ impl Physical for Quad {
 impl Physical for Cube {
     fn hit(&self, r: &Ray, rt: &Interval, record: &mut HitRecord) -> bool {
         let quads: Vec<Quad> = Vec::new();
-        let mut tmp = HitRecord::new();
+        let mut tmp = HitRecord::default();
         let mut hit = false;
         record.t = std::f64::MAX;
         for quad in quads {
@@ -147,7 +145,7 @@ impl Physical for Cube {
         }
         record.t = tmp.t;
         record.point = r.at(tmp.t);
-        record.mat = self.mat;
+        record.mat = Some(self.mat);
         return true;
     }
 }
@@ -171,7 +169,7 @@ impl Physical for Sphere {
         }
         record.t = root;
         record.point = r.at(root);
-        record.mat = self.mat;
+        record.mat = Some(self.mat);
         let outward_normal = (r.at(root) - self.center) / self.radius;
         record.set_face_normal(r, outward_normal);
         return true;
