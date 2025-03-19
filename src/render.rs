@@ -1,8 +1,5 @@
 use std::thread;
 
-use rand::distributions::{Distribution, Uniform};
-use rand::rngs::ThreadRng;
-
 use crate::camera::Camera;
 use crate::image::Image;
 use crate::image::Pixel;
@@ -72,6 +69,7 @@ impl Renderer {
 }
 
 impl ChunkRenderer {
+    #[inline]
     fn get_ray(&self, i: usize, j: usize) -> Ray {
         let ray_direction = self.cam.pixel_origin
             + (j as f64) * self.cam.pixel_delta_u
@@ -79,11 +77,12 @@ impl ChunkRenderer {
             - self.cam.position;
         Ray::new(self.cam.position, ray_direction)
     }
-
+    
+    #[inline]
     fn check_hit(&self, r: &Ray) -> (bool, HitRecord) {
-        let mut record = HitRecord::new();
+        let mut record = HitRecord::default();
         let mut hit = false;
-        let mut tmp = HitRecord::new();
+        let mut tmp = HitRecord::default();
         let mut closest = Interval::new(0.001, f64::INFINITY);
         for object in &self.objs.objects {
             if object.hit(r, &closest, &mut tmp) == true {
@@ -95,6 +94,7 @@ impl ChunkRenderer {
         (hit, record)
     }
 
+    #[inline]
     fn cast_ray(&self, r: Ray, depth: usize) -> Vec3 {
         if depth <= 0 {
             return Vec3::default();
@@ -109,7 +109,8 @@ impl ChunkRenderer {
         }
         let mut at = Vec3::default();
         let mut scattered = Ray::new(Vec3::default(), Vec3::default());
-        match rec.mat.scatter(&r, &rec, &mut at, &mut scattered) {
+        let mat = rec.mat.expect("Should collide with soemthing");
+        match mat.scatter(&r, &rec, &mut at, &mut scattered) {
             true => {
                 let cast = self.cast_ray(scattered, depth - 1);
                 Vec3::new(at.x * cast.x, at.y * cast.y, at.z * cast.z)
