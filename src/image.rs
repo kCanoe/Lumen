@@ -4,11 +4,7 @@ use crate::vec3::Vec3;
 use std::fmt;
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Pixel {
-    r: u8,
-    g: u8,
-    b: u8,
-}
+pub struct Pixel(Vec3);
 
 pub struct Image {
     pub data: Vec<Pixel>,
@@ -17,35 +13,35 @@ pub struct Image {
 }
 
 impl Pixel {
-    pub fn new(r: u8, g: u8, b: u8) -> Self {
-        Pixel { r, g, b }
+    pub fn default() -> Self {
+        Self(Vec3::default())
     }
 
-    fn to_byte(value: f64) -> u8 {
-        (255.999 * value.max(0.0).min(1.0)) as u8
-    }
-}
-
-impl fmt::Display for Pixel {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{} {} {}", self.r, self.g, self.b)
+    pub fn to_rgb(&self) -> (u8, u8, u8) {
+        let r = (255.999 * self.0.x.clamp(0.0, 1.0)) as u8;
+        let g = (255.999 * self.0.y.clamp(0.0, 1.0)) as u8;
+        let b = (255.999 * self.0.z.clamp(0.0, 1.0)) as u8;
+        (r, g, b)
     }
 }
 
 impl From<Vec3> for Pixel {
     fn from(v: Vec3) -> Self {
-        Self {
-            r: Self::to_byte(v.x),
-            g: Self::to_byte(v.y),
-            b: Self::to_byte(v.z),
-        }
+        Self(v)
+    }
+}
+
+impl fmt::Display for Pixel {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let (r, g, b) = self.to_rgb();
+        write!(f, "{} {} {}", r, g, b)
     }
 }
 
 impl Image {
     pub fn new(width: usize, height: usize) -> Self {
         Image {
-            data: vec![Pixel::new(0, 0, 0); width * height],
+            data: vec![Pixel::default(); width * height],
             rows: height,
             cols: width,
         }

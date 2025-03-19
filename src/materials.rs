@@ -63,7 +63,7 @@ impl Scatter for Diffuse {
         scattered: &mut Ray,
     ) -> bool {
         let mut scatter_direction = record.normal + Vec3::random_unit_vector();
-        if scatter_direction.near_zero() == true {
+        if scatter_direction.near_zero() {
             scatter_direction = record.normal
         }
         *scattered = Ray::new(record.point, scatter_direction);
