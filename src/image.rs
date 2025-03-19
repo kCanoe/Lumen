@@ -41,7 +41,7 @@ impl fmt::Display for Pixel {
 impl Image {
     pub fn new(width: usize, height: usize) -> Self {
         Image {
-            data: vec![Pixel::default(); width * height],
+            data: Vec::<Pixel>::with_capacity(width * height),
             rows: height,
             cols: width,
         }

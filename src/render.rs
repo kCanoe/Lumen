@@ -59,19 +59,15 @@ impl Renderer {
             });
             handles.push(handle);
         }
-        let pixel_count = self.camera.image_width * self.camera.image_height;
-        let mut image: Vec<Pixel> = Vec::with_capacity(pixel_count);
+        let mut result =
+            Image::new(self.camera.image_width, self.camera.image_height);
         for handle in handles {
             let pixels = handle.join().unwrap();
             for pixel in pixels {
-                image.push(pixel);
+                result.data.push(pixel);
             }
         }
-        Image {
-            data: image,
-            rows: self.camera.image_height,
-            cols: self.camera.image_width,
-        }
+        result
     }
 }
 
@@ -125,8 +121,7 @@ impl ChunkRenderer {
                 + a * Vec3::new(1.0, 1.0, 1.0);
         }
         let mut at = Vec3::default();
-        let mut scattered =
-            Ray::new(Vec3::default(), Vec3::default());
+        let mut scattered = Ray::new(Vec3::default(), Vec3::default());
         match rec.mat.scatter(&r, &rec, &mut at, &mut scattered) {
             true => {
                 let cast = self.cast_ray(scattered, depth - 1);
