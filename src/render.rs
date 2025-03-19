@@ -28,7 +28,6 @@ pub struct ChunkRenderer {
     cam_position: Vec3,
     samples: usize,
     depth: usize,
-    rng: ThreadRng,
     dist: Uniform<f64>,
 }
 
@@ -51,7 +50,7 @@ impl Renderer {
         for n in 0..self.thread_count {
             let objects = self.objects.clone();
             let handle = thread::spawn(move || {
-                let mut renderer = ChunkRenderer::new(objects, &self.camera);
+                let renderer = ChunkRenderer::new(objects, &self.camera);
                 renderer.render_chunk(
                     n * chunk_rows,
                     (n + 1) * chunk_rows,
@@ -86,21 +85,15 @@ impl ChunkRenderer {
             cam_position: camera.position,
             samples: camera.samples,
             depth: camera.max_depth,
-            rng: rand::thread_rng(),
             dist: Uniform::new(0.0, 1.0),
         }
     }
 
-    fn get_ray(&mut self, i: usize, j: usize) -> Ray {
-        let offset = Vec3 {
-            x: self.dist.sample(&mut self.rng) - 0.5,
-            y: self.dist.sample(&mut self.rng) - 0.5,
-            z: 0.0,
-        };
-        let pixel_center = self.pixel_origin
-            + (j as f64 + offset.x) * self.pixel_du
-            + (i as f64 + offset.y) * self.pixel_dv;
-        let ray_direction = pixel_center - self.cam_position;
+    fn get_ray(&self, i: usize, j: usize) -> Ray {
+        let ray_direction = self.pixel_origin
+            + (j as f64) * self.pixel_du
+            + (i as f64) * self.pixel_dv
+            - self.cam_position;
         Ray::new(self.cam_position, ray_direction)
     }
 
@@ -143,29 +136,24 @@ impl ChunkRenderer {
         }
     }
 
-    fn compute_pixel(&mut self, i: usize, j: usize) -> Pixel {
+    fn compute_pixel(&self, i: usize, j: usize) -> Pixel {
         let (samples, scale) = (self.samples, 1.0 / self.samples as f64);
         let mut color = Vec3::new(0.0, 0.0, 0.0);
         for _ in 0..samples {
             let r = self.get_ray(i, j);
             color += self.cast_ray(r, self.depth);
         }
-        Pixel::from_vec(color * scale)
+        Pixel::from(color * scale)
     }
 
     pub fn render_chunk(
-        &mut self,
+        &self,
         row_start: usize,
         row_end: usize,
         cols: usize,
     ) -> Vec<Pixel> {
-        let pixel_count = cols * (row_end - row_start);
-        let mut pixels = vec![Pixel::new(0, 0, 0); pixel_count];
-        for i in row_start..row_end {
-            for j in 0..cols {
-                pixels[(i - row_start) * cols + j] = self.compute_pixel(i, j);
-            }
-        }
-        pixels
+        (row_start..row_end)
+            .flat_map(|r| (0..cols).map(move |c| (&self).compute_pixel(r, c)))
+            .collect::<Vec<_>>()
     }
 }
