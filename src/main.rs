@@ -25,9 +25,9 @@ fn setup() -> (Camera, ObjectList, usize) {
     let red = Material::new_diffuse(Vec3::new(1.0, 0.2, 0.2));
 
     objects.add_quad(
-        Vec3::new(-3.0, -2.0, 5.0),
-        Vec3::new(0.0, 0.0, -4.0),
-        Vec3::new(0.0, 4.0, 0.0),
+        Vec3::new(-1.0, 2.0, 1.0),
+        Vec3::new(0.0, 0.0, -1.0),
+        Vec3::new(0.0, 1.0, 0.0),
         red,
     );
 

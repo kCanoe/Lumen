@@ -156,11 +156,11 @@ impl Physical for Quad {
 impl Quad {
     fn is_interior(a: f64, b: f64, rec: &mut HitRecord) -> bool {
         let unit = Interval::new(0.0, 1.0);
-        if unit.contains(a) || unit.contains(b) {
+        if !unit.contains(a) || !unit.contains(b) {
             return false;
         }
         rec.u = a;
-        rec.v = a;
+        rec.v = b;
         true
     }
 }
@@ -168,6 +168,8 @@ impl Quad {
 impl Physical for Cube {
     fn hit(&self, r: &Ray, rt: &Interval, record: &mut HitRecord) -> bool {
         let quads: Vec<Quad> = Vec::new();
+        // todo define the 6 quads based on the cube
+
         let mut tmp = HitRecord::default();
         let mut hit = false;
         record.t = std::f64::MAX;
