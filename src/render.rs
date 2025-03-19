@@ -77,7 +77,7 @@ impl ChunkRenderer {
             - self.cam.position;
         Ray::new(self.cam.position, ray_direction)
     }
-    
+
     #[inline]
     fn check_hit(&self, r: &Ray) -> (bool, HitRecord) {
         let mut record = HitRecord::default();
