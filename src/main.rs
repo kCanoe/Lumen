@@ -1,6 +1,6 @@
 use lumen::camera::{Camera, CameraBuilder};
 use lumen::materials::Material;
-use lumen::objects::ObjectList;
+use lumen::objects::objects::ObjectList;
 use lumen::render::Renderer;
 use lumen::vec3::Vec3;
 
