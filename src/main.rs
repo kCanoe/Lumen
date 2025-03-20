@@ -31,9 +31,9 @@ fn setup() -> (Camera, ObjectList, usize) {
         red,
     );
 
-    //let green = Material::new_diffuse(Vec3::new(0.2, 0.8, 0.2));
+    let green = Material::new_diffuse(Vec3::new(0.2, 0.8, 0.2));
 
-    //objects.add_cube(1.0, Vec3::new(2.0, 1.0, 1.0), green);
+    objects.add_cube(1.0, Vec3::new(2.0, 1.0, 1.0), green);
 
     let camera = CameraBuilder::new()
         .resolution(1024, 576)
