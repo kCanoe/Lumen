@@ -55,6 +55,11 @@ impl ObjectList {
         let quad = Object::Quad(Quad::new(q, u, v, mat));
         self.objects.push(quad);
     }
+
+    pub fn add_cube(&mut self, length: f64, center: Vec3, mat: Material) {
+        let cube = Object::Cube(Cube::new(length, center, mat));
+        self.objects.push(cube);
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -167,8 +172,26 @@ impl Quad {
 
 impl Physical for Cube {
     fn hit(&self, r: &Ray, rt: &Interval, record: &mut HitRecord) -> bool {
-        let quads: Vec<Quad> = Vec::new();
-        // todo define the 6 quads based on the cube
+        let q1 = Quad::new(
+            self.center, 
+            Vec3::new(0.0, 1.0, 0.0), 
+            Vec3::new(0.0, 0.0, 1.0), 
+            self.mat
+        );
+        let q2 = Quad::new(
+            self.center, 
+            Vec3::new(0.0, 1.0, 0.0), 
+            Vec3::new(1.0, 0.0, 0.0), 
+            self.mat
+        );
+        let q3 = Quad::new(
+            self.center, 
+            Vec3::new(1.0, 0.0, 0.0), 
+            Vec3::new(0.0, 0.0, 1.0), 
+            self.mat
+        );
+        
+        let quads = vec![q1, q2, q3];
 
         let mut tmp = HitRecord::default();
         let mut hit = false;
