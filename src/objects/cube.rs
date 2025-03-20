@@ -1,9 +1,9 @@
 use crate::materials::Material;
+use crate::objects::objects::Physical;
+use crate::objects::quad::Quad;
+use crate::objects::record::HitRecord;
 use crate::ray::{Interval, Ray};
 use crate::vec3::Vec3;
-use crate::objects::objects::Physical;
-use crate::objects::record::HitRecord;
-use crate::objects::quad::Quad;
 
 #[derive(Debug, Clone)]
 pub struct Cube {
@@ -30,40 +30,40 @@ impl Physical for Cube {
             z: self.center.z + 1.0,
         };
         let q1 = Quad::new(
-            self.center, 
-            Vec3::new(0.0, 1.0, 0.0), 
-            Vec3::new(0.0, 0.0, 1.0), 
-            self.mat
+            self.center,
+            Vec3::new(0.0, 1.0, 0.0),
+            Vec3::new(0.0, 0.0, 1.0),
+            self.mat,
         );
         let q2 = Quad::new(
-            self.center, 
-            Vec3::new(0.0, 1.0, 0.0), 
-            Vec3::new(1.0, 0.0, 0.0), 
-            self.mat
+            self.center,
+            Vec3::new(0.0, 1.0, 0.0),
+            Vec3::new(1.0, 0.0, 0.0),
+            self.mat,
         );
         let q3 = Quad::new(
-            self.center, 
-            Vec3::new(1.0, 0.0, 0.0), 
-            Vec3::new(0.0, 0.0, 1.0), 
-            self.mat
+            self.center,
+            Vec3::new(1.0, 0.0, 0.0),
+            Vec3::new(0.0, 0.0, 1.0),
+            self.mat,
         );
         let q4 = Quad::new(
-            furthest_corner, 
-            Vec3::new(0.0, -1.0, 0.0), 
-            Vec3::new(0.0, 0.0, -1.0), 
-            self.mat
+            furthest_corner,
+            Vec3::new(0.0, -1.0, 0.0),
+            Vec3::new(0.0, 0.0, -1.0),
+            self.mat,
         );
         let q5 = Quad::new(
-            furthest_corner, 
-            Vec3::new(0.0, -1.0, 0.0), 
-            Vec3::new(-1.0, 0.0, 0.0), 
-            self.mat
+            furthest_corner,
+            Vec3::new(0.0, -1.0, 0.0),
+            Vec3::new(-1.0, 0.0, 0.0),
+            self.mat,
         );
         let q6 = Quad::new(
-            furthest_corner, 
-            Vec3::new(-1.0, 0.0, 0.0), 
-            Vec3::new(0.0, 0.0, -1.0), 
-            self.mat
+            furthest_corner,
+            Vec3::new(-1.0, 0.0, 0.0),
+            Vec3::new(0.0, 0.0, -1.0),
+            self.mat,
         );
 
         let quads = vec![q1, q2, q3, q4, q5, q6];
@@ -92,5 +92,3 @@ impl Physical for Cube {
         return true;
     }
 }
-
-

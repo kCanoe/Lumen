@@ -4,9 +4,9 @@ use crate::camera::Camera;
 use crate::image::Image;
 use crate::image::Pixel;
 use crate::materials::Scatter;
-use crate::objects::record::HitRecord;
 use crate::objects::objects::ObjectList;
 use crate::objects::objects::Physical;
+use crate::objects::record::HitRecord;
 use crate::ray::Interval;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
@@ -53,6 +53,28 @@ impl Renderer {
             let renderer = ChunkRenderer::new(&self.objects, &self.camera);
             let handle = thread::spawn(move || {
                 renderer.render_chunk(n * chunk_rows, (n + 1) * chunk_rows)
+            });
+            handles.push(handle);
+        }
+        let mut result =
+            Image::new(self.camera.image_width, self.camera.image_height);
+        for handle in handles {
+            let pixels = handle.join().unwrap();
+            for pixel in pixels {
+                result.data.push(pixel);
+            }
+        }
+        result
+    }
+
+    pub fn render_vectorized(self) -> Image {
+        let mut handles = Vec::with_capacity(self.thread_count);
+        let chunk_rows = self.camera.image_height / self.thread_count;
+        let cols = self.camera.image_width;
+        for n in 0..self.thread_count {
+            let renderer = VectorizedChunkRenderer::new(&self.objects, &self.camera);
+            let handle = thread::spawn(move || {
+                renderer.render_chunk(n * chunk_rows, (n + 1) * chunk_rows, 0, cols)
             });
             handles.push(handle);
         }
@@ -136,6 +158,140 @@ impl ChunkRenderer {
                 (0..self.cam.image_width)
                     .map(move |c| (&self).compute_pixel(r, c))
             })
+            .collect::<Vec<_>>()
+    }
+}
+
+pub struct VectorizedChunkRenderer {
+    objs: Arc<ObjectList>,
+    cam: Arc<Camera>,
+}
+
+impl VectorizedChunkRenderer {
+    pub fn new(objects: &Arc<ObjectList>, camera: &Arc<Camera>) -> Self {
+        Self {
+            objs: Arc::clone(objects),
+            cam: Arc::clone(camera),
+        }
+    }
+
+    fn get_indicies(
+        row_start: usize,
+        row_end: usize,
+        col_start: usize,
+        col_end: usize,
+    ) -> Vec<(f64, f64)> {
+        (row_start..row_end)
+            .flat_map(|r| {
+                (col_start..col_end).map(move |c| (r as f64, c as f64))
+            })
+            .collect::<Vec<_>>()
+    }
+
+    fn get_rays(&self, indicies: &[(f64, f64)]) -> Vec<Ray> {
+        let pixel_count = indicies.len();
+        let mut rays =
+            vec![Ray::new(self.cam.position, Vec3::default()); pixel_count];
+        let default_direction = self.cam.pixel_origin - self.cam.position;
+        let (du, dv) = (self.cam.pixel_delta_u, self.cam.pixel_delta_v);
+
+        for i in 0..pixel_count {
+            let direction_shift = dv * indicies[i].0 + du * indicies[i].1;
+            rays[i].direction = default_direction + direction_shift;
+        }
+        rays
+    }
+
+    fn check_hit(&self, r: &Ray) -> (bool, HitRecord) {
+        let mut record = HitRecord::default();
+        let mut hit = false;
+        let mut tmp = HitRecord::default();
+        let mut closest = Interval::new(0.001, f64::INFINITY);
+        for object in &self.objs.objects {
+            if object.hit(r, &closest, &mut tmp) == true {
+                hit = true;
+                closest.max = tmp.t;
+                record = tmp;
+            }
+        }
+        (hit, record)
+    }
+
+    fn cast_ray(&self, r: &Ray, depth: usize) -> Vec3 {
+        if depth <= 0 {
+            return Vec3::default();
+        }
+
+        let (hit, rec) = self.check_hit(&r);
+        if hit != true {
+            let unit_direction = Vec3::unit_vector(r.direction);
+            let a = 0.5 * (unit_direction.y + 1.0);
+            return (1.0 - a) * Vec3::new(0.5, 0.7, 1.0)
+                + a * Vec3::new(1.0, 1.0, 1.0);
+        }
+        let mut at = Vec3::default();
+        let mut scattered = Ray::new(Vec3::default(), Vec3::default());
+        let mat = rec.mat.expect("Should collide with soemthing");
+        match mat.scatter(&r, &rec, &mut at, &mut scattered) {
+            true => {
+                let cast = self.cast_ray(&scattered, depth - 1);
+                Vec3::new(at.x * cast.x, at.y * cast.y, at.z * cast.z)
+            }
+            false => Vec3::default(),
+        }
+    }
+
+    fn cast_rays(&self, rays: &[Ray], max_depth: usize) -> Vec<Vec3> {
+        let pixel_count = rays.len();
+        let mut output = vec![Vec3::default(); rays.len()];
+        for i in 0..pixel_count {
+            output[i] = self.cast_ray(&rays[i], max_depth);
+        }
+        output
+    }
+
+    fn compute_colors(
+        &self,
+        row_start: usize,
+        row_end: usize,
+        col_start: usize,
+        col_end: usize,
+    ) -> Vec<Vec3> {
+        let (samples, depth) = (self.cam.samples, self.cam.max_depth);
+        let scale = 1.0 / self.cam.samples as f64;
+
+        let pixel_count = (row_end - row_start) * (col_end - col_start);
+        let indicies =
+            Self::get_indicies(row_start, row_end, col_start, col_end);
+
+        let mut colors = vec![Vec3::default(); pixel_count];
+
+        for _ in 0..samples {
+            let rays = self.get_rays(&indicies[..]);
+            let sample_colors = self.cast_rays(&rays[..], depth);
+            for i in 0..pixel_count {
+                colors[i] += sample_colors[i];
+            }
+        }
+
+        for i in 0..pixel_count {
+            colors[i] *= scale;
+        }
+        colors
+    }
+
+    pub fn render_chunk(
+        &self,
+        row_start: usize,
+        row_end: usize,
+        col_start: usize,
+        col_end: usize,
+    ) -> Vec<Pixel> {
+        let colors =
+            self.compute_colors(row_start, row_end, col_start, col_end);
+        colors
+            .into_iter()
+            .map(|c| Pixel::from(c))
             .collect::<Vec<_>>()
     }
 }

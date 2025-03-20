@@ -2,11 +2,10 @@ use crate::materials::Material;
 use crate::ray::{Interval, Ray};
 use crate::vec3::Vec3;
 
-use crate::objects::sphere::Sphere;
-use crate::objects::quad::Quad;
 use crate::objects::cube::Cube;
+use crate::objects::quad::Quad;
 use crate::objects::record::HitRecord;
-
+use crate::objects::sphere::Sphere;
 
 #[derive(Debug, Clone)]
 pub struct ObjectList {
@@ -54,4 +53,3 @@ impl Physical for Object {
         }
     }
 }
-

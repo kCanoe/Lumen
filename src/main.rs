@@ -54,7 +54,8 @@ fn main() -> std::io::Result<()> {
     let mut output = File::create(output_path)?;
 
     let (camera, objects, thread_count) = setup();
-    let image = Renderer::new(camera, objects, thread_count).render();
+    let image = Renderer::new(camera, objects, thread_count)
+        .render_vectorized();
 
     let output_text = format!("{image}");
     output.write_all(output_text.as_bytes())?;

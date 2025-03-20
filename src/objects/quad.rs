@@ -1,8 +1,8 @@
 use crate::materials::Material;
-use crate::ray::{Interval, Ray};
-use crate::vec3::Vec3;
 use crate::objects::objects::Physical;
 use crate::objects::record::HitRecord;
+use crate::ray::{Interval, Ray};
+use crate::vec3::Vec3;
 
 #[derive(Debug, Clone)]
 pub struct Quad {
