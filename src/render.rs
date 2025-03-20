@@ -72,9 +72,15 @@ impl Renderer {
         let chunk_rows = self.camera.image_height / self.thread_count;
         let cols = self.camera.image_width;
         for n in 0..self.thread_count {
-            let renderer = VectorizedChunkRenderer::new(&self.objects, &self.camera);
+            let renderer =
+                VectorizedChunkRenderer::new(&self.objects, &self.camera);
             let handle = thread::spawn(move || {
-                renderer.render_chunk(n * chunk_rows, (n + 1) * chunk_rows, 0, cols)
+                renderer.render_chunk(
+                    n * chunk_rows,
+                    (n + 1) * chunk_rows,
+                    0,
+                    cols,
+                )
             });
             handles.push(handle);
         }
@@ -188,18 +194,14 @@ impl VectorizedChunkRenderer {
             .collect::<Vec<_>>()
     }
 
-    fn get_rays(&self, indicies: &[(f64, f64)]) -> Vec<Ray> {
+    fn get_rays(&self, indicies: &[(f64, f64)], rays: &mut [Ray]) {
         let pixel_count = indicies.len();
-        let mut rays =
-            vec![Ray::new(self.cam.position, Vec3::default()); pixel_count];
         let default_direction = self.cam.pixel_origin - self.cam.position;
         let (du, dv) = (self.cam.pixel_delta_u, self.cam.pixel_delta_v);
-
         for i in 0..pixel_count {
             let direction_shift = dv * indicies[i].0 + du * indicies[i].1;
             rays[i].direction = default_direction + direction_shift;
         }
-        rays
     }
 
     fn check_hit(&self, r: &Ray) -> (bool, HitRecord) {
@@ -241,13 +243,11 @@ impl VectorizedChunkRenderer {
         }
     }
 
-    fn cast_rays(&self, rays: &[Ray], max_depth: usize) -> Vec<Vec3> {
+    fn cast_rays(&self, rays: &[Ray], colors: &mut [Vec3], max_depth: usize) {
         let pixel_count = rays.len();
-        let mut output = vec![Vec3::default(); rays.len()];
         for i in 0..pixel_count {
-            output[i] = self.cast_ray(&rays[i], max_depth);
+            colors[i] += self.cast_ray(&rays[i], max_depth);
         }
-        output
     }
 
     fn compute_colors(
@@ -266,14 +266,13 @@ impl VectorizedChunkRenderer {
 
         let mut colors = vec![Vec3::default(); pixel_count];
 
-        for _ in 0..samples {
-            let rays = self.get_rays(&indicies[..]);
-            let sample_colors = self.cast_rays(&rays[..], depth);
-            for i in 0..pixel_count {
-                colors[i] += sample_colors[i];
-            }
-        }
+        let mut rays =
+            vec![Ray::new(self.cam.position, Vec3::default()); pixel_count];
 
+        for _ in 0..samples {
+            self.get_rays(&indicies[..], &mut rays[..]);
+            self.cast_rays(&rays[..], &mut colors[..], depth);
+        }
         for i in 0..pixel_count {
             colors[i] *= scale;
         }

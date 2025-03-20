@@ -41,7 +41,7 @@ fn setup() -> (Camera, ObjectList, usize) {
         .target(0.0, 0.0, -1.0)
         .position(3.0, 2.0, 3.0)
         .upward(0.0, 1.0, 0.0)
-        .samples(10)
+        .samples(100)
         .max_depth(10)
         .build();
 
@@ -54,8 +54,8 @@ fn main() -> std::io::Result<()> {
     let mut output = File::create(output_path)?;
 
     let (camera, objects, thread_count) = setup();
-    let image = Renderer::new(camera, objects, thread_count)
-        .render_vectorized();
+    let image =
+        Renderer::new(camera, objects, thread_count).render_vectorized();
 
     let output_text = format!("{image}");
     output.write_all(output_text.as_bytes())?;
