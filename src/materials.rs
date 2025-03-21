@@ -1,6 +1,5 @@
-use crate::objects::record::HitRecord;
-use crate::ray::Ray;
-use crate::vec3::Vec3;
+use crate::math::*;
+use crate::objects::HitRecord;
 use rand::distributions::{Distribution, Uniform};
 
 pub fn random_double() -> f64 {
@@ -33,11 +32,16 @@ pub enum Material {
 }
 
 impl Material {
-    pub fn new_diffuse(albedo: Vec3) -> Self {
-        Self::Diffuse(Diffuse { albedo })
+    pub fn new_diffuse(r: f64, g: f64, b: f64) -> Self {
+        Self::Diffuse(Diffuse {
+            albedo: Vec3::new(r, g, b),
+        })
     }
-    pub fn new_metal(albedo: Vec3, fuzz: f64) -> Self {
-        Self::Metal(Metal { albedo, fuzz })
+    pub fn new_metal(r: f64, g: f64, b: f64, fuzz: f64) -> Self {
+        Self::Metal(Metal {
+            albedo: Vec3::new(r, g, b),
+            fuzz,
+        })
     }
     pub fn new_dielectric(refraction: f64) -> Self {
         Self::Dielectric(Dielectric { refraction })

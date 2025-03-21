@@ -1,7 +1,7 @@
-use std::fmt::Formatter;
+use crate::math::Vec3;
 
-use crate::vec3::Vec3;
 use std::fmt;
+use std::fmt::Formatter;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Pixel(Vec3);

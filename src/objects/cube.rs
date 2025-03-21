@@ -1,9 +1,6 @@
 use crate::materials::Material;
-use crate::objects::objects::Physical;
-use crate::objects::quad::Quad;
-use crate::objects::record::HitRecord;
-use crate::ray::{Interval, Ray};
-use crate::vec3::Vec3;
+use crate::math::*;
+use crate::objects::*;
 
 #[derive(Debug, Clone)]
 pub struct Cube {
