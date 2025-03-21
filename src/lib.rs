@@ -2,14 +2,12 @@
 pub mod materials;
 pub mod math;
 pub mod objects;
-
-pub mod camera;
-pub mod image;
-pub mod render;
+pub mod rendering;
 
 // flatten
-pub use camera::Camera;
-pub use camera::CameraBuilder;
 pub use materials::Material;
 pub use objects::ObjectList;
-pub use render::Renderer;
+pub use rendering::Renderer;
+pub use rendering::Camera;
+pub use rendering::CameraBuilder;
+

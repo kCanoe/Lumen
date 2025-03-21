@@ -1,6 +1,9 @@
 use crate::materials::Material;
 use crate::math::*;
-use crate::objects::*;
+
+use super::Physical;
+use super::HitRecord;
+use super::Quad;
 
 #[derive(Debug, Clone)]
 pub struct Cube {

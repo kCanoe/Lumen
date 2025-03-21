@@ -1,13 +1,12 @@
 use std::sync::Arc;
 use std::thread;
 
-use crate::camera::Camera;
-use crate::image::{Image, Pixel};
-
-use crate::materials::Scatter;
-
 use crate::math::*;
 use crate::objects::*;
+use crate::materials::Scatter;
+
+use super::image::*;
+use super::Camera;
 
 pub struct Renderer {
     camera: Arc<Camera>,

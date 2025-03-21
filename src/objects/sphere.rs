@@ -1,6 +1,8 @@
 use crate::materials::Material;
 use crate::math::*;
-use crate::objects::*;
+
+use super::Physical;
+use super::HitRecord;
 
 #[derive(Debug, Clone)]
 pub struct Sphere {
