@@ -44,9 +44,9 @@ impl Vec3 {
 
     pub fn clamp(v: Vec3) -> Self {
         Vec3 {
-            x: v.x.max(0.0).min(1.0),
-            y: v.y.max(0.0).min(1.0),
-            z: v.z.max(0.0).min(1.0),
+            x: v.x.clamp(0.0, 1.0),
+            y: v.y.clamp(0.0, 1.0),
+            z: v.z.clamp(0.0, 1.0),
         }
     }
 
@@ -60,13 +60,8 @@ impl Vec3 {
         }
     }
 
-    pub fn random_unit_vector() -> Self {
-        Self::unit_vector(Self::random_vector())
-    }
-
     pub fn random_on_hemisphere(normal: Vec3) -> Self {
-        let on_unit_sphere = Self::random_unit_vector();
-
+        let on_unit_sphere = Self::random_vector();
         match on_unit_sphere * normal > 0.0 {
             true => on_unit_sphere,
             false => -1.0 * on_unit_sphere,

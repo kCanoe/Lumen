@@ -66,7 +66,7 @@ impl Scatter for Diffuse {
         attenuation: &mut Vec3,
         scattered: &mut Ray,
     ) -> bool {
-        let mut scatter_direction = record.normal + Vec3::random_unit_vector();
+        let mut scatter_direction = record.normal + Vec3::random_vector();
         if scatter_direction.near_zero() {
             scatter_direction = record.normal
         }
@@ -86,7 +86,7 @@ impl Scatter for Metal {
     ) -> bool {
         let mut reflected = Vec3::reflect(r.direction, record.normal);
         reflected = Vec3::unit_vector(reflected)
-            + self.fuzz * Vec3::random_unit_vector();
+            + self.fuzz * Vec3::random_vector();
         *scattered = Ray::new(record.point, reflected);
         *attenuation = self.albedo.clone();
         return (scattered.direction * record.normal) > 0.0;

@@ -132,30 +132,6 @@ impl ChunkRenderer {
         }
     }
 
-    fn compute_colors(
-        &self,
-        row_start: usize,
-        row_end: usize,
-        col_start: usize,
-        col_end: usize,
-    ) -> Vec<Vec3> {
-        let (samples, depth) = (self.cam.samples, self.cam.max_depth);
-        let scale = 1.0 / self.cam.samples as f64;
-        let position = self.cam.position;
-        let pixel_count = (row_end - row_start) * (col_end - col_start);
-        let indicies = Self::indicies(row_start, row_end, col_start, col_end);
-        let mut colors = vec![Vec3::default(); pixel_count];
-        let mut rays = vec![Ray::new(position, Vec3::default()); pixel_count];
-        for _ in 0..samples {
-            self.get_rays(&indicies[..], &mut rays[..]);
-            self.cast_rays(&rays[..], &mut colors[..], depth);
-        }
-        for i in 0..pixel_count {
-            colors[i] *= scale;
-        }
-        colors
-    }
-
     pub fn render_chunk(
         &self,
         row_start: usize,
@@ -163,8 +139,24 @@ impl ChunkRenderer {
         col_start: usize,
         col_end: usize,
     ) -> Vec<Pixel> {
-        self.compute_colors(row_start, row_end, col_start, col_end)
-            .into_iter()
+        let (samples, depth) = (self.cam.samples, self.cam.max_depth);
+        let scale = 1.0 / self.cam.samples as f64;
+        let position = self.cam.position;
+        let pixel_count = (row_end - row_start) * (col_end - col_start);
+        let indicies = Self::indicies(row_start, row_end, col_start, col_end);
+        let mut colors = vec![Vec3::default(); pixel_count];
+        let mut rays = vec![Ray::new(position, Vec3::default()); pixel_count];
+
+        for _ in 0..samples {
+            self.get_rays(&indicies[..], &mut rays[..]);
+            self.cast_rays(&rays[..], &mut colors[..], depth);
+        }
+
+        for i in 0..pixel_count {
+            colors[i] *= scale;
+        }
+
+        colors.into_iter()
             .map(|c| Pixel::from(c))
             .collect::<Vec<_>>()
     }
