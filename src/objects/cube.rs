@@ -23,7 +23,12 @@ impl Cube {
 }
 
 impl Physical for Cube {
+    fn get_verticies(&self) -> Vec<Vec3> {
+        todo!()
+    }
+    
     fn hit(&self, r: &Ray, rt: &Interval, record: &mut HitRecord) -> bool {
+        // todo - move this to get_verticies, simplify computation as well
         let furthest_corner = Vec3 {
             x: self.center.x + 1.0,
             y: self.center.y + 1.0,
