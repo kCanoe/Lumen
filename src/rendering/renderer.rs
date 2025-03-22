@@ -68,12 +68,14 @@ impl ChunkRenderer {
         col_start: usize,
         col_end: usize,
     ) -> Vec<(f64, f64)> {
-        // todo - fix this function and reduce complexity
-        (row_start..row_end)
-            .flat_map(|r| {
-                (col_start..col_end).map(move |c| (r as f64, c as f64))
-            })
-            .collect::<Vec<_>>()
+        let count = (row_end - row_start) * (col_end - col_start);
+        let mut indicies: Vec<(f64, f64)> = Vec::with_capacity(count);
+        for row in row_start..row_end {
+            for col in col_start..col_end {
+                indicies.push((row as f64, col as f64)); 
+            }
+        }
+        indicies
     }
     
     // the indicies function is probably an unnecessary perf cost.
