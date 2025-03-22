@@ -122,6 +122,47 @@ impl ChunkRenderer {
         }
     }
 
+    fn new_cast_rays(
+        &self,
+        rays: &[Ray],
+        colors: &mut [Vec3],
+        skip_indexes: &mut [bool],
+        pixel_count: usize,
+        depth: usize
+    ) {
+        // base case for the function reaching max ray depth
+        if depth <= 0 {
+            return;
+        }
+        // iterates throguh all values, checking for collisions.
+        // if there is no collision, adds that index to the list
+        // of indexes to skip over, and adds the background color to it.
+        for i in 0..pixel_count {
+            if skip_indexes[i] {
+                continue;
+            }
+            let (hit, rec) = self.check_hit(&rays[i]);
+            if !hit {
+                skip_indexes[i] = true;
+                colors [i] += lerp(
+                    &rays[i],
+                    Vec3::new(0.5, 0.7, 1.0),
+                    Vec3::new(1.0, 1.0, 1.0),
+                );
+            }
+
+        }
+        for i in 0..pixel_count {
+            let (mut at, mut scattered) = (Vec3::default(), Ray::default());
+            if let Some(mat) = rec.mat {
+                mat.scatter(&r, &rec, &mut at, &mut scattered);
+            }
+            // how to handle the recusrive case?
+            let cast = self.cast_ray(&scattered, depth - 1);
+            colors[i] += Vec3::new(at.x * cast.x, at.y * cast.y, at.z * cast.z);
+        }
+    }
+
     fn cast_rays(&self, rays: &[Ray], colors: &mut [Vec3], max_depth: usize) {
         let pixel_count = rays.len();
         for i in 0..pixel_count {
@@ -142,7 +183,7 @@ impl ChunkRenderer {
         let pixel_count = (row_end - row_start) * (col_end - col_start);
         let mut colors = vec![Vec3::default(); pixel_count];
         let mut rays = vec![Ray::new(position, Vec3::default()); pixel_count];
-
+        let mut skip_indexes = vec![false; pixel_count];
         for _ in 0..samples {
             self.get_rays(
                 row_start,
