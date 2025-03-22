@@ -68,13 +68,16 @@ impl ChunkRenderer {
         col_start: usize,
         col_end: usize,
     ) -> Vec<(f64, f64)> {
+        // todo - fix this function and reduce complexity
         (row_start..row_end)
             .flat_map(|r| {
                 (col_start..col_end).map(move |c| (r as f64, c as f64))
             })
             .collect::<Vec<_>>()
     }
-
+    
+    // the indicies function is probably an unnecessary perf cost.
+    // Consider removing it and moving it into `get_rays`
     fn get_rays(&self, indicies: &[(f64, f64)], rays: &mut [Ray]) {
         let pixel_count = indicies.len();
         let default_direction = self.cam.pixel_origin - self.cam.position;
@@ -100,6 +103,8 @@ impl ChunkRenderer {
         (hit, record)
     }
 
+    // todo - update this function to be generic over two paramaters,
+    // move out into the math module.
     fn lerp(r: &Ray) -> Vec3 {
         let unit_direction = Vec3::unit_vector(r.direction);
         let a = 0.5 * (unit_direction.y + 1.0);
