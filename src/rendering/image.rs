@@ -23,6 +23,10 @@ impl Pixel {
         let b = (255.999 * self.0.z.clamp(0.0, 1.0)) as u8;
         (r, g, b)
     }
+
+    pub fn inner(&self) -> Vec3 {
+        self.0.clone()
+    }
 }
 
 impl From<Vec3> for Pixel {

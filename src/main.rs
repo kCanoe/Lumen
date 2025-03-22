@@ -7,6 +7,8 @@ use lumen::Material;
 use lumen::ObjectList;
 use lumen::rendering::*;
 
+use lumen::filter::blur;
+
 fn setup() -> (Camera, ObjectList, usize) {
     let ground = Material::new_diffuse(0.5, 0.5, 0.5);
     let mat1 = Material::new_dielectric(1.50);
@@ -27,7 +29,7 @@ fn setup() -> (Camera, ObjectList, usize) {
         .target(0.0, 0.0, -1.0)
         .position(3.0, 2.0, 3.0)
         .upward(0.0, 1.0, 0.0)
-        .samples(10)
+        .samples(2)
         .max_depth(10)
         .build();
     (camera, objects, 8)
@@ -40,7 +42,9 @@ fn main() -> std::io::Result<()> {
 
     let (camera, objects, thread_count) = setup();
     let renderer = Renderer::new(camera, objects, thread_count);
-    let image = renderer.render();
+    let mut image = renderer.render();
+
+    blur(&mut image, 500);
 
     let output_text = format!("{image}");
     output.write_all(output_text.as_bytes())?;
