@@ -96,6 +96,10 @@ impl ChunkRenderer {
         (hit, record)
     }
 
+    // goal - merge `fn cast_rays` and `fn cast_ray` into one function.
+    // doing this will reduce the cost of repeated recursion, and should
+    // improve performance.
+
     fn cast_ray(&self, r: &Ray, depth: usize) -> Vec3 {
         if depth <= 0 {
             return Vec3::default();
