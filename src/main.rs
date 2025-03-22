@@ -3,9 +3,9 @@ use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
 
+use lumen::rendering::*;
 use lumen::Material;
 use lumen::ObjectList;
-use lumen::rendering::*;
 
 fn setup() -> (Camera, ObjectList, usize) {
     let ground = Material::new_diffuse(0.5, 0.5, 0.5);

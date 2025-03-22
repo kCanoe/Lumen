@@ -1,8 +1,8 @@
 use crate::materials::Material;
 use crate::math::*;
 
-use super::Physical;
 use super::HitRecord;
+use super::Physical;
 use super::Quad;
 
 #[derive(Debug, Clone)]
