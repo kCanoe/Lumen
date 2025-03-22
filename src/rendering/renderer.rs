@@ -1,9 +1,9 @@
 use std::sync::Arc;
 use std::thread;
 
+use crate::materials::Scatter;
 use crate::math::*;
 use crate::objects::*;
-use crate::materials::Scatter;
 
 use super::image::*;
 use super::Camera;
@@ -62,31 +62,22 @@ impl ChunkRenderer {
         }
     }
 
-    fn indicies(
+    fn get_rays(
+        &self,
         row_start: usize,
         row_end: usize,
         col_start: usize,
         col_end: usize,
-    ) -> Vec<(f64, f64)> {
-        let count = (row_end - row_start) * (col_end - col_start);
-        let mut indicies: Vec<(f64, f64)> = Vec::with_capacity(count);
-        for row in row_start..row_end {
-            for col in col_start..col_end {
-                indicies.push((row as f64, col as f64)); 
-            }
-        }
-        indicies
-    }
-    
-    // the indicies function is probably an unnecessary perf cost.
-    // Consider removing it and moving it into `get_rays`
-    fn get_rays(&self, indicies: &[(f64, f64)], rays: &mut [Ray]) {
-        let pixel_count = indicies.len();
+        rays: &mut [Ray],
+    ) {
         let default_direction = self.cam.pixel_origin - self.cam.position;
         let (du, dv) = (self.cam.pixel_delta_u, self.cam.pixel_delta_v);
-        for i in 0..pixel_count {
-            let direction_shift = dv * indicies[i].0 + du * indicies[i].1;
-            rays[i].direction = default_direction + direction_shift;
+        for row in row_start..row_end {
+            for col in col_start..col_end {
+                let idx = (row - row_start) * (col_end - col_start) + col;
+                let direction_shift = (dv * row as f64) + (du * col as f64);
+                rays[idx].direction = default_direction + direction_shift;
+            }
         }
     }
 
@@ -150,12 +141,17 @@ impl ChunkRenderer {
         let scale = 1.0 / self.cam.samples as f64;
         let position = self.cam.position;
         let pixel_count = (row_end - row_start) * (col_end - col_start);
-        let indicies = Self::indicies(row_start, row_end, col_start, col_end);
         let mut colors = vec![Vec3::default(); pixel_count];
         let mut rays = vec![Ray::new(position, Vec3::default()); pixel_count];
 
         for _ in 0..samples {
-            self.get_rays(&indicies[..], &mut rays[..]);
+            self.get_rays(
+                row_start,
+                row_end,
+                col_start,
+                col_end,
+                &mut rays[..],
+            );
             self.cast_rays(&rays[..], &mut colors[..], depth);
         }
 
@@ -163,7 +159,8 @@ impl ChunkRenderer {
             colors[i] *= scale;
         }
 
-        colors.into_iter()
+        colors
+            .into_iter()
             .map(|c| Pixel::from(c))
             .collect::<Vec<_>>()
     }
