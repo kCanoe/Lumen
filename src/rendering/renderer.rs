@@ -96,22 +96,17 @@ impl ChunkRenderer {
         (hit, record)
     }
 
-    // todo - update this function to be generic over two paramaters,
-    // move out into the math module.
-    fn lerp(r: &Ray) -> Vec3 {
-        let unit_direction = Vec3::unit_vector(r.direction);
-        let a = 0.5 * (unit_direction.y + 1.0);
-        return (1.0 - a) * Vec3::new(0.5, 0.7, 1.0)
-            + a * Vec3::new(1.0, 1.0, 1.0);
-    }
-
     fn cast_ray(&self, r: &Ray, depth: usize) -> Vec3 {
         if depth <= 0 {
             return Vec3::default();
         }
         let (hit, rec) = self.check_hit(&r);
         if !hit {
-            return Self::lerp(&r);
+            return lerp(
+                &r,
+                Vec3::new(0.5, 0.7, 1.0),
+                Vec3::new(1.0, 1.0, 1.0),
+            );
         }
         let (mut at, mut scattered) = (Vec3::default(), Ray::default());
         if let Some(mat) = rec.mat {
