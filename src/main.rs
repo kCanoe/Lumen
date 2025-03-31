@@ -13,7 +13,7 @@ fn make_cube_array() -> ObjectList {
         for j in 0..4 {
             let (cx, cy) = (3.0 * i as f64, 3.0 * j as f64);
             let mat = Material::new_metal(0.5, 0.5, 0.7, 0.0);
-            objects.add_sphere(1.0, cx, 0.5, cy, mat);
+            objects.add_cube(1.0, cx, 0.5, cy, mat);
         }
     }
     let ground = Material::new_diffuse(0.5, 0.5, 0.5);
@@ -30,9 +30,10 @@ fn setup() -> (Camera, ObjectList, usize) {
         .target(6.0, 0.0, 6.0)
         .position(8.0, 8.0, 8.0)
         .upward(0.0, 1.0, 0.0)
-        .samples(10)
+        .samples(100)
         .max_depth(10)
         .build();
+
     (camera, objects, 32)
 }
 
