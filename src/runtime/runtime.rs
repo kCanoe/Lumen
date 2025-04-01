@@ -13,7 +13,7 @@ pub struct Runtime<T, U> {
 }
 
 pub struct Worker<T, U> {
-    status: WorkerStatus,
+    status: Arc<Mutex<WorkerStatus>>,
     job: Arc<dyn Operation<T, U> + Send + Sync>,
     input: Arc<Mutex<Batch<T>>>,    
     output: Sender<U>,
@@ -80,7 +80,7 @@ where
         outgoing: &Sender<U>
     ) -> Self {
         Self {
-            status: WorkerStatus::Free,
+            status: Arc::new(Mutex::New(WorkerStatus::Free)),
             job: Arc::clone(job),
             input: Arc::new(Mutex::new(Batch::new(0))),
             output: outgoing.clone(),
@@ -96,7 +96,7 @@ where
     }
 
     pub fn start(&self) {
-        println!("worker started")
+        todo!();
     }
 }
 
@@ -155,3 +155,5 @@ where
         todo!();
     }
 }
+
+
