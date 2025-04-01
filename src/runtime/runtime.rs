@@ -19,6 +19,7 @@ pub struct Worker<T, U> {
     output: Sender<U>,
 }
 
+#[derive(Clone, Copy)]
 pub enum WorkerStatus {
     Busy,
     Free,
@@ -80,7 +81,7 @@ where
         outgoing: &Sender<U>
     ) -> Self {
         Self {
-            status: Arc::new(Mutex::New(WorkerStatus::Free)),
+            status: Arc::new(Mutex::new(WorkerStatus::Free)),
             job: Arc::clone(job),
             input: Arc::new(Mutex::new(Batch::new(0))),
             output: outgoing.clone(),
@@ -91,8 +92,9 @@ where
         Arc::clone(&self.input)
     }
 
-    pub fn status(&self) -> &WorkerStatus {
-        &self.status
+    pub fn status(&self) -> WorkerStatus {
+        let status = self.status.lock().unwrap();
+        *status
     }
 
     pub fn start(&self) {
