@@ -14,7 +14,7 @@ pub struct Runtime<T, U> {
 pub struct Worker<T, U> {
     status: WorkerStatus,
     job: Arc<dyn Operation<T, U> + Send + Sync>,
-    input: Arc<T>,    
+    input: Arc<Vec<T>>,    
     output: Sender<U>,
 }
 
@@ -23,9 +23,21 @@ pub enum WorkerStatus {
     Free,
 }
 
+pub struct Batcher;
+
+impl Batcher {
+    pub fn new() -> Self {
+        Self
+    }
+
+    pub fn create_batches<T>(data: Vec<T>, batch_count: usize) -> Vec<Vec<T>> {
+        todo!();
+    }
+}
+
 impl<T, U> Worker<T, U>
 where
-    T: Default + Send + Sync + 'static,
+    T: Send + Sync + 'static,
     U: Send + Sync + 'static,
 {
     pub fn new(
@@ -35,7 +47,7 @@ where
         Self {
             status: WorkerStatus::Free,
             job: Arc::clone(job),
-            input: Arc::new(T::default()),
+            input: Arc::new(Vec::new()),
             output: outgoing.clone(),
         }
     }
@@ -51,7 +63,7 @@ where
 
 impl<T, U> Runtime<T, U>
 where
-    T: Default + Send + Sync + 'static,
+    T: Send + Sync + 'static,
     U: Send + Sync + 'static,
 {
     pub fn new(
@@ -72,12 +84,13 @@ where
         }
     }
 
-    pub fn start(&self) {
+    pub fn execute(&self) {
         for worker in &self.workers {
             let worker = worker.clone();
             thread::spawn(move || {
                 worker.start();
             });
         }
+        let result = self.collector.recv();
     }
 }
