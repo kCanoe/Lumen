@@ -14,9 +14,8 @@ pub struct Manager<T, U> {
 }
 
 pub struct Worker<T, U> {
-    status: Arc<Mutex<WorkerStatus>>,
     job: Arc<dyn Job<T, U> + Send + Sync>,
-    input: Arc<Mutex<Batch<T>>>,
+    work: Arc<Mutex<Work<T>>>,
     output: Sender<Batch<U>>,
 }
 
@@ -27,12 +26,11 @@ pub struct Worker<T, U> {
 //the batch until it is complete. Then they will set their own status to
 //Work::Awaiting
 
-
-#[derive(PartialEq, Eq, Clone, Copy)]
-pub enum WorkerStatus {
-    HasWork,
-    Free,
-    Done,
+#[derive(PartialEq)]
+pub enum Work<T> {
+    Awaiting,
+    Delegated(Batch<T>),
+    Completed,
 }
 
 pub struct Batcher<T> {
@@ -42,7 +40,7 @@ pub struct Batcher<T> {
 #[derive(PartialEq)]
 pub struct Batch<T> {
     pub id: usize,
-    pub data: Vec<T>,
+    pub items: Vec<T>,
 }
 
 #[derive(PartialEq)]
@@ -56,14 +54,14 @@ where
     T: Clone,
 {
     pub fn new(id: usize) -> Self {
-        let data = Vec::new();
-        Self { id, data }
+        let items = Vec::new();
+        Self { id, items }
     }
 
     pub fn create_from_slice(id: usize, slice: &[T]) -> Self {
-        let mut data = Vec::with_capacity(slice.len());
-        data.extend_from_slice(slice);
-        Self { id, data }
+        let mut items = Vec::with_capacity(slice.len());
+        items.extend_from_slice(slice);
+        Self { id, items }
     }
 }
 
@@ -98,38 +96,39 @@ where
         outgoing: &Sender<Batch<U>>,
     ) -> Self {
         Self {
-            status: Arc::new(Mutex::new(WorkerStatus::Free)),
             job: Arc::clone(job),
-            input: Arc::new(Mutex::new(Batch::new(0))),
+            work: Arc::new(Mutex::new(Work::Awaiting)),
             output: outgoing.clone(),
         }
     }
 
-    pub fn handle(&self) -> Arc<Mutex<Batch<T>>> {
-        Arc::clone(&self.input)
+    pub fn needs_work(&self) -> bool {
+        match *self.work.lock().unwrap() {
+            Work::Awaiting => true,
+            _ => false,
+        }
     }
 
-    pub fn status(&self) -> WorkerStatus {
-        let status = self.status.lock().unwrap();
-        *status
+    pub fn process_batch(&self, input_batch: &Batch<T>) -> Batch<U> {
+        let mut output_batch = Batch::new(input_batch.id);
+        for item in &input_batch.items {
+            let output_item = self.job.run(&item); 
+            output_batch.items.push(output_item);
+        }
+        output_batch
     }
 
-    pub fn start(&self) {
+    pub fn run(&self) {
         loop {
-            match self.status() {
-                WorkerStatus::Free => {}
-                WorkerStatus::HasWork => {
-                    let items = self.input.lock().unwrap();
-                    let mut result = Batch::new(items.id);
-                    for item in &items.data {
-                        let output = self.job.run(item);
-                        result.data.push(output);
-                    }
+            let mut work = self.work.lock().unwrap();
+            match &*work {
+                Work::Delegated(batch) => {
+                    let result = self.process_batch(batch);
                     let _ = self.output.send(result);
-                    let mut status = self.status.lock().unwrap();
-                    *status = WorkerStatus::Free;
+                    *work = Work::Awaiting
                 }
-                WorkerStatus::Done => return,
+                Work::Completed => return,
+                Work::Awaiting => {}
             }
         }
     }
@@ -155,12 +154,13 @@ where
 
     pub fn try_dispatch(&self, batch: Batch<T>) -> DispatchResult<T> {
         for worker in &self.workers {
-            if worker.status() == WorkerStatus::Free {
-                let mut worker_batch = worker.input.lock().unwrap();
-                *worker_batch = batch;
-                let mut status = worker.status.lock().unwrap();
-                *status = WorkerStatus::HasWork;
-                return DispatchResult::Dispatched;
+            let mut work = worker.work.lock().unwrap();
+            match &*work {
+                Work::Awaiting => {
+                    *work = Work::Delegated(batch);
+                    return DispatchResult::Dispatched;
+                }
+                _ => {}
             }
         }
         return DispatchResult::AllWorkersBusy(batch);
@@ -170,7 +170,7 @@ where
         for worker in &self.workers {
             let worker = Arc::clone(&worker);
             thread::spawn(move || {
-                worker.start();
+                worker.run();
             });
         }
         let mut batches = Batcher::new(data).create_batches(batch_count);
@@ -192,10 +192,10 @@ where
             result.push(output_batch);
         }
         for worker in &self.workers {
-            let mut status = worker.status.lock().unwrap();
-            *status = WorkerStatus::Done;
+            let mut work = worker.work.lock().unwrap();
+            *work = Work::Completed;
         }
         result.sort_by_key(|b| b.id);
-        result.into_iter().flat_map(|b| b.data.into_iter()).collect()
+        result.into_iter().flat_map(|b| b.items.into_iter()).collect()
     }
 }
