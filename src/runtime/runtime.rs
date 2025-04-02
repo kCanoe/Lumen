@@ -175,6 +175,7 @@ where
                 DispatchResult::Dispatched => {}
                 DispatchResult::AllWorkersBusy(batch) => {
                     batches.push_back(batch);
+                    thread::sleep(std::time::Duration::from_millis(10));
                 }
             } 
         }

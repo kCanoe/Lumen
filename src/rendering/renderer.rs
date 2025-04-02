@@ -46,7 +46,7 @@ impl PixelRenderer {
         let default_direction = self.cam.pixel_origin - self.cam.position;
         let (du, dv) = (self.cam.pixel_delta_u, self.cam.pixel_delta_v);
         let direction_shift = (dv * i as f64) + (du * j as f64);
-        Ray::new(self.cam.position, default_direction - direction_shift)
+        Ray::new(self.cam.position, default_direction + direction_shift)
     }
 
     fn check_hit(&self, r: &Ray) -> (bool, HitRecord) {

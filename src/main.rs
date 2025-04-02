@@ -30,7 +30,7 @@ fn setup() -> (Camera, ObjectList, usize, usize) {
         .target(6.0, 0.0, 6.0)
         .position(8.0, 8.0, 8.0)
         .upward(0.0, 1.0, 0.0)
-        .samples(1)
+        .samples(100)
         .max_depth(10)
         .build();
 
