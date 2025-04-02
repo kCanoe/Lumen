@@ -11,7 +11,9 @@ pub struct ObjectList {
 impl ObjectList {
     #[allow(dead_code)]
     pub fn new() -> Self {
-        ObjectList { objects: Vec::new() }
+        ObjectList {
+            objects: Vec::new(),
+        }
     }
 
     pub fn add_sphere(

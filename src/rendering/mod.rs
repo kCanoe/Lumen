@@ -1,6 +1,6 @@
 // modules
-pub mod image;
 pub mod camera;
+pub mod image;
 pub mod renderer;
 
 // flatten
@@ -11,5 +11,3 @@ pub use camera::Camera;
 pub use camera::CameraBuilder;
 
 pub use renderer::Renderer;
-
-

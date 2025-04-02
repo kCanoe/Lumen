@@ -85,8 +85,8 @@ impl Scatter for Metal {
         scattered: &mut Ray,
     ) -> bool {
         let mut reflected = Vec3::reflect(r.direction, record.normal);
-        reflected = Vec3::unit_vector(reflected)
-            + self.fuzz * Vec3::random_vector();
+        reflected =
+            Vec3::unit_vector(reflected) + self.fuzz * Vec3::random_vector();
         *scattered = Ray::new(record.point, reflected);
         *attenuation = self.albedo.clone();
         return (scattered.direction * record.normal) > 0.0;

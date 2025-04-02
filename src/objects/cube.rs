@@ -1,8 +1,8 @@
 use crate::materials::Material;
 use crate::math::*;
 
-use super::Physical;
 use super::HitRecord;
+use super::Physical;
 use super::Quad;
 
 #[derive(Debug, Clone)]
@@ -10,64 +10,66 @@ pub struct Cube {
     pub length: f64,
     pub center: Vec3,
     pub mat: Material,
+    sides: Vec<Quad>,
 }
 
 impl Cube {
     pub fn new(length: f64, center: Vec3, mat: Material) -> Self {
+        let far_corner =
+            Vec3::new(center.x + length, center.y + length, center.z + length);
+        let mut sides: Vec<Quad> = Vec::with_capacity(6);
+        sides.push(Quad::new(
+            center,
+            Vec3::new(0.0, length, 0.0),
+            Vec3::new(0.0, 0.0, length),
+            mat,
+        ));
+        sides.push(Quad::new(
+            center,
+            Vec3::new(0.0, length, 0.0),
+            Vec3::new(length, 0.0, 0.0),
+            mat,
+        ));
+        sides.push(Quad::new(
+            center,
+            Vec3::new(length, 0.0, 0.0),
+            Vec3::new(0.0, 0.0, length),
+            mat,
+        ));
+        sides.push(Quad::new(
+            far_corner,
+            Vec3::new(0.0, -length, 0.0),
+            Vec3::new(0.0, 0.0, -length),
+            mat,
+        ));
+        sides.push(Quad::new(
+            far_corner,
+            Vec3::new(0.0, -length, 0.0),
+            Vec3::new(-length, 0.0, 0.0),
+            mat,
+        ));
+        sides.push(Quad::new(
+            far_corner,
+            Vec3::new(-length, 0.0, 0.0),
+            Vec3::new(0.0, 0.0, -length),
+            mat,
+        ));
         Self {
             length,
             center,
             mat,
+            sides,
         }
+    }
+
+    fn get_quads(&self) -> &Vec<Quad> {
+        &self.sides
     }
 }
 
 impl Physical for Cube {
     fn hit(&self, r: &Ray, rt: &Interval, record: &mut HitRecord) -> bool {
-        let furthest_corner = Vec3 {
-            x: self.center.x + 1.0,
-            y: self.center.y + 1.0,
-            z: self.center.z + 1.0,
-        };
-        let q1 = Quad::new(
-            self.center,
-            Vec3::new(0.0, 1.0, 0.0),
-            Vec3::new(0.0, 0.0, 1.0),
-            self.mat,
-        );
-        let q2 = Quad::new(
-            self.center,
-            Vec3::new(0.0, 1.0, 0.0),
-            Vec3::new(1.0, 0.0, 0.0),
-            self.mat,
-        );
-        let q3 = Quad::new(
-            self.center,
-            Vec3::new(1.0, 0.0, 0.0),
-            Vec3::new(0.0, 0.0, 1.0),
-            self.mat,
-        );
-        let q4 = Quad::new(
-            furthest_corner,
-            Vec3::new(0.0, -1.0, 0.0),
-            Vec3::new(0.0, 0.0, -1.0),
-            self.mat,
-        );
-        let q5 = Quad::new(
-            furthest_corner,
-            Vec3::new(0.0, -1.0, 0.0),
-            Vec3::new(-1.0, 0.0, 0.0),
-            self.mat,
-        );
-        let q6 = Quad::new(
-            furthest_corner,
-            Vec3::new(-1.0, 0.0, 0.0),
-            Vec3::new(0.0, 0.0, -1.0),
-            self.mat,
-        );
-
-        let quads = vec![q1, q2, q3, q4, q5, q6];
-
+        let quads = self.get_quads();
         let mut tmp = HitRecord::default();
         let mut hit = false;
         let mut closest_q = 0;
