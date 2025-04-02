@@ -25,7 +25,7 @@ fn setup() -> (Camera, ObjectList, usize, usize) {
     let objects = make_cube_array();
 
     let camera = CameraBuilder::new()
-        .resolution(1024, 576)
+        .resolution(4095, 2304)
         .vfov(90.0)
         .target(6.0, 0.0, 6.0)
         .position(8.0, 8.0, 8.0)
@@ -43,15 +43,7 @@ fn main() -> std::io::Result<()> {
     let mut output = File::create(output_path)?;
 
     let (camera, objects, thread_count, batch_count) = setup();
-
-    let renderer = WorkerRenderer::new(
-        camera,
-        objects,
-        thread_count,
-        batch_count
-    );
-
-//    let renderer = Renderer::new(camera, objects, thread_count);
+    let renderer = Renderer::new(camera, objects, thread_count, batch_count);
     let image = renderer.render();
 
     let output_text = format!("{image}");
