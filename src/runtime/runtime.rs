@@ -42,9 +42,6 @@ pub enum DispatchResult<T> {
     AllWorkersBusy(Batch<T>),
 }
 
-// change plan - refactor batch so that cloning is not necessary,
-// prefer to pass references and pass back data
-
 impl<T> Batch<T> {
     pub fn new(id: usize) -> Self {
         let items = Vec::new();
@@ -64,13 +61,13 @@ impl<T> Batcher<T> {
     pub fn create_batches(mut self, batch_count: usize) -> VecDeque<Batch<T>> {
         assert!(self.data.len() % batch_count == 0);
         let batch_size = self.data.len() / batch_count;
-        let mut result = VecDeque::new();
+        let mut work_batches = VecDeque::new();
         for i in 0..batch_count {
             let batch: Vec<T> = self.data.drain(..batch_size).collect();
             let batch = Batch::from_vec(i, batch);
-            result.push_back(batch);
+            work_batches.push_back(batch);
         }
-        result
+        work_batches
     }
 }
 
