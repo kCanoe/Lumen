@@ -8,13 +8,13 @@ pub trait Job<T, U> {
     fn run(&self, input: &T) -> U;
 }
 
-pub struct Manager<T, U> {
-    workers: Vec<Arc<Worker<T, U>>>,
+pub struct Manager<T, U, J> {
+    workers: Vec<Arc<Worker<T, U, J>>>,
     collector: Receiver<Batch<U>>,
 }
 
-pub struct Worker<T, U> {
-    job: Arc<dyn Job<T, U> + Send + Sync>,
+pub struct Worker<T, U, J> {
+    job: Arc<J>,
     work: Arc<Mutex<Work<T>>>,
     output: Sender<Batch<U>>,
 }
@@ -71,13 +71,14 @@ impl<T> Batcher<T> {
     }
 }
 
-impl<T, U> Worker<T, U>
+impl<T, U, J> Worker<T, U, J>
 where
     T: Send + Sync + 'static,
     U: Send + Sync + 'static,
+    J: Job<T, U> + Send + Sync + 'static,
 {
     pub fn new(
-        job: &Arc<dyn Job<T, U> + Send + Sync>,
+        job: &Arc<J>,
         outgoing: &Sender<Batch<U>>,
     ) -> Self {
         Self {
@@ -119,14 +120,15 @@ where
     }
 }
 
-impl<T, U> Manager<T, U>
+impl<T, U, J> Manager<T, U, J>
 where
     T: Send + Sync + 'static,
     U: Send + Sync + 'static,
+    J: Job<T, U> + Send + Sync + 'static,
 {
     pub fn new(
         thread_count: usize,
-        job: Arc<dyn Job<T, U> + Send + Sync>,
+        job: Arc<J>,
     ) -> Self {
         let (worker_tx, collector) = channel();
         let mut workers = Vec::with_capacity(thread_count);
