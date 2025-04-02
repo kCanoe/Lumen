@@ -49,6 +49,9 @@ pub enum DispatchResult<T> {
     AllWorkersBusy(Batch<T>),
 }
 
+// change plan - refactor batch so that cloning is not necessary,
+// prefer to pass references and pass back data
+
 impl<T> Batch<T> 
 where
     T: Clone,
