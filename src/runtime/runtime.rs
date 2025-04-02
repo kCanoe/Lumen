@@ -20,6 +20,14 @@ pub struct Worker<T, U> {
     output: Sender<Batch<U>>,
 }
 
+//Update the worker status enum and Batch type to be one thing.
+//Workers will have a Work::Awaiting or Work::Working(Batch<T>) 
+//When workers have a Work::Awaiting, they will do nothing
+//When workers have a Work::Working(Batch<T>), they will work on
+//the batch until it is complete. Then they will set their own status to
+//Work::Awaiting
+
+
 #[derive(PartialEq, Eq, Clone, Copy)]
 pub enum WorkerStatus {
     HasWork,
