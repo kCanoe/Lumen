@@ -19,13 +19,6 @@ pub struct Worker<T, U> {
     output: Sender<Batch<U>>,
 }
 
-//Update the worker status enum and Batch type to be one thing.
-//Workers will have a Work::Awaiting or Work::Working(Batch<T>) 
-//When workers have a Work::Awaiting, they will do nothing
-//When workers have a Work::Working(Batch<T>), they will work on
-//the batch until it is complete. Then they will set their own status to
-//Work::Awaiting
-
 #[derive(PartialEq)]
 pub enum Work<T> {
     Awaiting,
@@ -52,37 +45,29 @@ pub enum DispatchResult<T> {
 // change plan - refactor batch so that cloning is not necessary,
 // prefer to pass references and pass back data
 
-impl<T> Batch<T> 
-where
-    T: Clone,
-{
+impl<T> Batch<T> {
     pub fn new(id: usize) -> Self {
         let items = Vec::new();
         Self { id, items }
     }
 
-    pub fn create_from_slice(id: usize, slice: &[T]) -> Self {
-        let mut items = Vec::with_capacity(slice.len());
-        items.extend_from_slice(slice);
+    pub fn from_vec(id: usize, items: Vec<T>) -> Self {
         Self { id, items }
     }
 }
 
-impl<T> Batcher<T> 
-where
-    T: Clone,
-{
+impl<T> Batcher<T> {
     pub fn new(data: Vec<T>) -> Self {
         Self { data }
     }
 
-    pub fn create_batches(self, batch_count: usize) -> VecDeque<Batch<T>> {
+    pub fn create_batches(mut self, batch_count: usize) -> VecDeque<Batch<T>> {
         assert!(self.data.len() % batch_count == 0);
         let batch_size = self.data.len() / batch_count;
         let mut result = VecDeque::new();
         for i in 0..batch_count {
-            let batch_slice = &self.data[batch_size * i..batch_size * (i + 1)];
-            let batch = Batch::create_from_slice(i, batch_slice);
+            let batch: Vec<T> = self.data.drain(..batch_size).collect();
+            let batch = Batch::from_vec(i, batch);
             result.push_back(batch);
         }
         result
