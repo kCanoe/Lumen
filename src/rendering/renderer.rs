@@ -5,8 +5,8 @@ use crate::materials::Scatter;
 use crate::math::*;
 use crate::objects::*;
 
-use crate::runtime::Operation;
-use crate::runtime::Runtime;
+use crate::runtime::Job;
+use crate::runtime::Manager;
 
 use super::image::*;
 use super::Camera;
@@ -98,7 +98,7 @@ impl PixelRenderer {
     }
 }
 
-impl Operation<(usize, usize), Pixel> for PixelRenderer {
+impl Job<(usize, usize), Pixel> for PixelRenderer {
     fn run(&self, pixel_index: &(usize, usize)) -> Pixel {
         let (i, j) = *pixel_index;
         self.render_pixel(i, j)
@@ -124,7 +124,7 @@ impl WorkerRenderer {
         let (w, h) = (self.camera.image_width, self.camera.image_height);
         let renderer = PixelRenderer::new(&self.objects, &self.camera);
         let rendering = Arc::new(renderer);
-        let runtime = Runtime::new(self.thread_count, rendering);
+        let manager = Manager::new(self.thread_count, rendering);
         let mut indexes = Vec::with_capacity(w * h);
         for i in 0..h {
             for j in 0..w {
@@ -132,9 +132,9 @@ impl WorkerRenderer {
                 indexes.push(idx);
             }
         }
-        runtime.execute(indexes, self.batch_count);
+        manager.execute(indexes, self.batch_count);
         let mut result = Image::new(w, h);
-        result.data = runtime.join(self.batch_count);
+        result.data = manager.join(self.batch_count);
         result
     }
 }

@@ -4,18 +4,18 @@ use std::thread;
 
 use std::collections::VecDeque;
 
-pub trait Operation<T, U> {
+pub trait Job<T, U> {
     fn run(&self, input: &T) -> U;
 }
 
-pub struct Runtime<T, U> {
+pub struct Manager<T, U> {
     workers: Vec<Arc<Worker<T, U>>>,
     collector: Receiver<Batch<U>>,
 }
 
 pub struct Worker<T, U> {
     status: Arc<Mutex<WorkerStatus>>,
-    job: Arc<dyn Operation<T, U> + Send + Sync>,
+    job: Arc<dyn Job<T, U> + Send + Sync>,
     input: Arc<Mutex<Batch<T>>>,
     output: Sender<Batch<U>>,
 }
@@ -31,19 +31,19 @@ pub struct Batcher<T> {
     data: Vec<T>,
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(PartialEq)]
 pub struct Batch<T> {
     pub id: usize,
     pub data: Vec<T>,
 }
 
 #[derive(PartialEq)]
-pub enum DispatchResult<U> {
+pub enum DispatchResult<T> {
     Dispatched,
-    AllWorkersBusy(Batch<U>),
+    AllWorkersBusy(Batch<T>),
 }
 
-impl<T> Batch<T>
+impl<T> Batch<T> 
 where
     T: Clone,
 {
@@ -57,13 +57,9 @@ where
         data.extend_from_slice(slice);
         Self { id, data }
     }
-
-    pub fn create_from_vec(id: usize, vec: Vec<T>) -> Self {
-        Self { id, data: vec }
-    }
 }
 
-impl<T> Batcher<T>
+impl<T> Batcher<T> 
 where
     T: Clone,
 {
@@ -90,7 +86,7 @@ where
     U: Clone + Send + Sync + 'static,
 {
     pub fn new(
-        job: &Arc<dyn Operation<T, U> + Send + Sync>,
+        job: &Arc<dyn Job<T, U> + Send + Sync>,
         outgoing: &Sender<Batch<U>>,
     ) -> Self {
         Self {
@@ -131,14 +127,14 @@ where
     }
 }
 
-impl<T, U> Runtime<T, U>
+impl<T, U> Manager<T, U>
 where
     T: Clone + Send + Sync + 'static,
     U: Clone + Send + Sync + 'static,
 {
     pub fn new(
         thread_count: usize,
-        job: Arc<dyn Operation<T, U> + Send + Sync>,
+        job: Arc<dyn Job<T, U> + Send + Sync>,
     ) -> Self {
         let (worker_tx, collector) = channel();
         let mut workers = Vec::with_capacity(thread_count);
