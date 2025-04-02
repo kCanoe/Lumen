@@ -76,8 +76,8 @@ impl<T> Batcher<T> {
 
 impl<T, U> Worker<T, U>
 where
-    T: Clone + Send + Sync + 'static,
-    U: Clone + Send + Sync + 'static,
+    T: Send + Sync + 'static,
+    U: Send + Sync + 'static,
 {
     pub fn new(
         job: &Arc<dyn Job<T, U> + Send + Sync>,
@@ -124,8 +124,8 @@ where
 
 impl<T, U> Manager<T, U>
 where
-    T: Clone + Send + Sync + 'static,
-    U: Clone + Send + Sync + 'static,
+    T: Send + Sync + 'static,
+    U: Send + Sync + 'static,
 {
     pub fn new(
         thread_count: usize,
