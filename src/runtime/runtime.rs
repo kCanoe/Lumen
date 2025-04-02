@@ -31,10 +31,16 @@ pub struct Batcher<T> {
     data: Vec<T>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct Batch<T> {
     pub id: usize,
     pub data: Vec<T>,
+}
+
+#[derive(PartialEq)]
+pub enum DispatchResult<U> {
+    Dispatched,
+    AllWorkersBusy(Batch<U>),
 }
 
 impl<T> Batch<T>
@@ -143,37 +149,34 @@ where
         Self { workers, collector }
     }
 
+    pub fn try_dispatch(&self, batch: Batch<T>) -> DispatchResult<T> {
+        for worker in &self.workers {
+            if worker.status() == WorkerStatus::Free {
+                let mut worker_batch = worker.input.lock().unwrap();
+                *worker_batch = batch;
+                let mut status = worker.status.lock().unwrap();
+                *status = WorkerStatus::HasWork;
+                return DispatchResult::Dispatched;
+            }
+        }
+        return DispatchResult::AllWorkersBusy(batch);
+    }
+
     pub fn execute(&self, data: Vec<T>, batch_count: usize) {
         for worker in &self.workers {
-            let worker = worker.clone();
+            let worker = Arc::clone(&worker);
             thread::spawn(move || {
                 worker.start();
             });
         }
-        let mut batches = Batcher::new(data)
-            .create_batches(batch_count);
+        let mut batches = Batcher::new(data).create_batches(batch_count);
         while let Some(batch) = batches.pop_front() {
-            let mut dispatched = false;
-            for i in 0..self.workers.len() {
-                match self.workers[i].status() {
-                    WorkerStatus::Free => {
-                        let mut worker_batch =
-                            self.workers[i].input.lock().unwrap();
-                        *worker_batch = batch.clone();
-                        let mut status = self.workers[i].status
-                            .lock()
-                            .unwrap();
-                        *status = WorkerStatus::HasWork;
-                        dispatched = true;
-                        break;
-                    }
-                    WorkerStatus::HasWork => {},
-                    WorkerStatus::Done => {},
+            match self.try_dispatch(batch) {
+                DispatchResult::Dispatched => {}
+                DispatchResult::AllWorkersBusy(batch) => {
+                    batches.push_back(batch);
                 }
-            }
-            if !dispatched {
-                batches.push_back(batch);
-            }
+            } 
         }
     }
 

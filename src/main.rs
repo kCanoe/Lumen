@@ -30,7 +30,7 @@ fn setup() -> (Camera, ObjectList, usize, usize) {
         .target(6.0, 0.0, 6.0)
         .position(8.0, 8.0, 8.0)
         .upward(0.0, 1.0, 0.0)
-        .samples(100)
+        .samples(1)
         .max_depth(10)
         .build();
 
@@ -43,12 +43,15 @@ fn main() -> std::io::Result<()> {
     let mut output = File::create(output_path)?;
 
     let (camera, objects, thread_count, batch_count) = setup();
+
     let renderer = WorkerRenderer::new(
         camera,
         objects,
         thread_count,
         batch_count
     );
+
+//    let renderer = Renderer::new(camera, objects, thread_count);
     let image = renderer.render();
 
     let output_text = format!("{image}");

@@ -126,8 +126,8 @@ impl WorkerRenderer {
         let rendering = Arc::new(renderer);
         let runtime = Runtime::new(self.thread_count, rendering);
         let mut indexes = Vec::with_capacity(w * h);
-        for i in 0..w {
-            for j in 0..h {
+        for i in 0..h {
+            for j in 0..w {
                 let idx = (i, j);
                 indexes.push(idx);
             }
