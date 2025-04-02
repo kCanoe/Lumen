@@ -2,6 +2,8 @@ use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::{Arc, Mutex};
 use std::thread;
 
+use std::collections::VecDeque;
+
 pub trait Operation<T, U> {
     fn run(&self, input: &T) -> U;
 }
@@ -18,16 +20,18 @@ pub struct Worker<T, U> {
     output: Sender<Batch<U>>,
 }
 
-#[derive(Clone, Copy)]
+#[derive(PartialEq, Eq, Clone, Copy)]
 pub enum WorkerStatus {
-    Busy,
+    HasWork,
     Free,
+    Done,
 }
 
 pub struct Batcher<T> {
     data: Vec<T>,
 }
 
+#[derive(Clone)]
 pub struct Batch<T> {
     pub id: usize,
     pub data: Vec<T>,
@@ -61,14 +65,14 @@ where
         Self { data }
     }
 
-    pub fn create_batches(self, batch_count: usize) -> Vec<Batch<T>> {
+    pub fn create_batches(self, batch_count: usize) -> VecDeque<Batch<T>> {
         assert!(self.data.len() % batch_count == 0);
         let batch_size = self.data.len() / batch_count;
-        let mut result = Vec::new();
+        let mut result = VecDeque::new();
         for i in 0..batch_count {
-            let batch_slice = &self.data[batch_size * i..(batch_size + 1) * i];
+            let batch_slice = &self.data[batch_size * i..batch_size * (i + 1)];
             let batch = Batch::create_from_slice(i, batch_slice);
-            result.push(batch);
+            result.push_back(batch);
         }
         result
     }
@@ -104,7 +108,7 @@ where
         loop {
             match self.status() {
                 WorkerStatus::Free => {}
-                WorkerStatus::Busy => {
+                WorkerStatus::HasWork => {
                     let items = self.input.lock().unwrap();
                     let mut result = Batch::new(items.id);
                     for item in &items.data {
@@ -115,6 +119,7 @@ where
                     let mut status = self.status.lock().unwrap();
                     *status = WorkerStatus::Free;
                 }
+                WorkerStatus::Done => return,
             }
         }
     }
@@ -146,21 +151,28 @@ where
             });
         }
         let mut batches = Batcher::new(data)
-            .create_batches(batch_count)
-            .into_iter();
-        while let Some(batch) = batches.next() {
+            .create_batches(batch_count);
+        while let Some(batch) = batches.pop_front() {
+            let mut dispatched = false;
             for i in 0..self.workers.len() {
                 match self.workers[i].status() {
                     WorkerStatus::Free => {
                         let mut worker_batch =
                             self.workers[i].input.lock().unwrap();
-                        *worker_batch = batch;
-                        let mut status = self.workers[i].status.lock().unwrap();
-                        *status = WorkerStatus::Busy;
+                        *worker_batch = batch.clone();
+                        let mut status = self.workers[i].status
+                            .lock()
+                            .unwrap();
+                        *status = WorkerStatus::HasWork;
+                        dispatched = true;
                         break;
                     }
-                    WorkerStatus::Busy => {}
+                    WorkerStatus::HasWork => {},
+                    WorkerStatus::Done => {},
                 }
+            }
+            if !dispatched {
+                batches.push_back(batch);
             }
         }
     }
@@ -171,7 +183,11 @@ where
             let output_batch = self.collector.recv().unwrap();
             result.push(output_batch);
         }
+        for worker in &self.workers {
+            let mut status = worker.status.lock().unwrap();
+            *status = WorkerStatus::Done;
+        }
         result.sort_by_key(|b| b.id);
-        result.into_iter().flat_map(|b| b.data).collect()
+        result.into_iter().flat_map(|b| b.data.into_iter()).collect()
     }
 }

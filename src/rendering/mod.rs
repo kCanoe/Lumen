@@ -11,3 +11,5 @@ pub use camera::Camera;
 pub use camera::CameraBuilder;
 
 pub use renderer::Renderer;
+
+pub use renderer::WorkerRenderer;
