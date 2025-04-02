@@ -27,7 +27,7 @@ pub enum Work<T> {
 }
 
 pub struct Batcher<T> {
-    data: Vec<T>,
+    items: Vec<T>,
 }
 
 #[derive(PartialEq)]
@@ -53,17 +53,44 @@ impl<T> Batch<T> {
     }
 }
 
+impl<T> IntoIterator for Batch<T> {
+    type Item = T;
+    type IntoIter = std::vec::IntoIter<T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.items.into_iter()
+    }
+}
+
+impl<'a, T> IntoIterator for &'a Batch<T> {
+    type Item = &'a T;
+    type IntoIter = std::slice::Iter<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.items.iter()
+    }
+}
+
+impl<'a, T> IntoIterator for &'a mut Batch<T> {
+    type Item = &'a mut T;
+    type IntoIter = std::slice::IterMut<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.items.iter_mut()
+    }
+}
+
 impl<T> Batcher<T> {
-    pub fn new(data: Vec<T>) -> Self {
-        Self { data }
+    pub fn new(items: Vec<T>) -> Self {
+        Self { items }
     }
 
     pub fn create_batches(mut self, batch_count: usize) -> VecDeque<Batch<T>> {
-        assert!(self.data.len() % batch_count == 0);
-        let batch_size = self.data.len() / batch_count;
-        let mut work_batches = VecDeque::new();
+        assert!(self.items.len() % batch_count == 0);
+        let batch_size = self.items.len() / batch_count;
+        let mut work_batches = VecDeque::with_capacity(batch_count);
         for i in 0..batch_count {
-            let batch: Vec<T> = self.data.drain(..batch_size).collect();
+            let batch: Vec<T> = self.items.drain(..batch_size).collect();
             let batch = Batch::from_vec(i, batch);
             work_batches.push_back(batch);
         }
@@ -97,7 +124,7 @@ where
 
     pub fn process_batch(&self, input_batch: &Batch<T>) -> Batch<U> {
         let mut output_batch = Batch::new(input_batch.id);
-        for item in &input_batch.items {
+        for item in input_batch {
             let output_item = self.job.run(&item); 
             output_batch.items.push(output_item);
         }
@@ -183,6 +210,6 @@ where
             *work = Work::Completed;
         }
         result.sort_by_key(|b| b.id);
-        result.into_iter().flat_map(|b| b.items.into_iter()).collect()
+        result.into_iter().flat_map(|b| b.into_iter()).collect()
     }
 }
