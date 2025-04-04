@@ -1,5 +1,5 @@
 use std::sync::mpsc::{channel, Receiver, Sender};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, RwLock};
 use std::thread;
 
 use std::collections::VecDeque;
@@ -14,6 +14,7 @@ pub struct Manager<T, U, J> {
 }
 
 pub struct Worker<T, U, J> {
+    id: usize,
     job: Arc<J>,
     work: Arc<Mutex<Work<T>>>,
     output: Sender<Batch<U>>,
@@ -80,12 +81,96 @@ impl<'a, T> IntoIterator for &'a mut Batch<T> {
     }
 }
 
+pub struct WorkQueue<T> {
+    pub id: usize,
+    pub items: usize,
+    work: VecDeque<Batch<T>>,
+}
+
+pub struct WorkPool<T> {
+    pool: Vec<Arc<RwLock<WorkQueue<T>>>>,
+}
+
+impl<T> WorkQueue<T> {
+    pub fn new(id: usize, batches: Vec<Batch<T>>) -> Self {
+        Self {
+            id: id,
+            items: batches.len(),
+            work: VecDeque::from(batches),
+        }
+    }
+    
+    pub fn push(&mut self, batch: Batch<T>) {
+        self.work.push_front(batch);
+    }
+
+    pub fn pop(&mut self) -> Option<Batch<T>> {
+        self.work.pop_back()
+    }
+
+    pub fn steal(&mut self) -> Option<Batch<T>> {
+        self.work.pop_front()
+    }
+}
+
+impl<T> WorkPool<T> {
+    pub fn new(worker_count: usize, batches: &mut VecDeque<Batch<T>>) -> Self {
+        let batch_count = batches.len() / worker_count;
+        let mut pool = Vec::with_capacity(worker_count);
+        for i in 0..worker_count {
+            let queue_batches = batches.drain(..batch_count).collect();
+            let queue = Arc::new(RwLock::new(WorkQueue::new(i, queue_batches)));
+            pool.push(queue);
+        }
+        Self { pool }
+    }
+
+    pub fn rebalance(&mut self, least: usize, most: usize) {
+        let mut a = self.pool[most].write().unwrap();
+        let mut b = self.pool[most].write().unwrap();
+        let half_diff = (a.items - b.items) / 2;
+        for _ in 0..half_diff {
+            if let Some(batch) = a.steal() {
+                b.push(batch);
+            }
+        }
+    }
+
+    pub fn smallest_pool(&self) -> usize {
+        let mut least_idx = 0;
+        for (idx, queue) in self.pool.iter().enumerate() {
+            let current = queue.read().unwrap();
+            let current_items = current.items;
+            let least_lock = &self.pool[least_idx].read().unwrap();
+            let least_items = least_lock.items;
+            if current_items < least_items {
+                least_idx = idx;
+            }
+        }
+        least_idx
+    }
+
+    pub fn largest_pool(&self) -> usize {
+        let mut greatest_idx = 0;
+        for (idx, queue) in self.pool.iter().enumerate() {
+            let current = queue.read().unwrap();
+            let current_items = current.items;
+            let greatest_lock = &self.pool[greatest_idx].read().unwrap();
+            let greatest_items = greatest_lock.items;
+            if current_items > greatest_items {
+                greatest_idx = idx;
+            }
+        }
+        greatest_idx
+    }
+}
+
 impl<T> Batcher<T> {
     pub fn new(items: Vec<T>) -> Self {
         Self { items }
     }
 
-    pub fn create_batches(mut self, batch_count: usize) -> VecDeque<Batch<T>> {
+    pub fn create_batches(&mut self, batch_count: usize) -> VecDeque<Batch<T>> {
         assert!(self.items.len() % batch_count == 0);
         let batch_size = self.items.len() / batch_count;
         let mut work_batches = VecDeque::with_capacity(batch_count);
@@ -105,10 +190,12 @@ where
     J: Job<T, U> + Send + Sync + 'static,
 {
     pub fn new(
+        id: usize,
         job: &Arc<J>,
         outgoing: &Sender<Batch<U>>,
     ) -> Self {
         Self {
+            id: id,
             job: Arc::clone(job),
             work: Arc::new(Mutex::new(Work::Awaiting)),
             output: outgoing.clone(),
@@ -159,8 +246,8 @@ where
     ) -> Self {
         let (worker_tx, collector) = channel();
         let mut workers = Vec::with_capacity(thread_count);
-        for _ in 0..thread_count {
-            let worker = Arc::new(Worker::new(&job, &worker_tx));
+        for i in 0..thread_count {
+            let worker = Arc::new(Worker::new(i, &job, &worker_tx));
             workers.push(worker);
         }
         Self { workers, collector }
