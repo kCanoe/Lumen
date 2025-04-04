@@ -41,7 +41,6 @@ impl Renderer {
         let (w, h) = (self.camera.image_width, self.camera.image_height);
         let renderer = PixelRenderer::new(&self.objects, &self.camera);
         let rendering = Arc::new(renderer);
-        let manager = Manager::new(self.thread_count, rendering);
         let mut indexes = Vec::with_capacity(w * h);
         for i in 0..h {
             for j in 0..w {
@@ -49,9 +48,10 @@ impl Renderer {
                 indexes.push(idx);
             }
         }
-        manager.execute(indexes, self.batch_count);
+        let manager = Manager::new(self.thread_count, 256, indexes, rendering);
+        manager.execute();
         let mut result = Image::new(w, h);
-        result.data = manager.join(self.batch_count);
+        result.data = manager.join();
         result
     }
 }

@@ -4,12 +4,17 @@ use std::thread;
 
 use std::collections::VecDeque;
 
+use std::iter::zip;
+
 pub trait Job<T, U> {
     fn run(&self, input: &T) -> U;
 }
 
 pub struct Manager<T, U, J> {
+    thread_count: usize,
+    batch_count: usize,
     workers: Vec<Arc<Worker<T, U, J>>>,
+    work_pool: WorkPool<T>,
     collector: Receiver<Batch<U>>,
 }
 
@@ -21,68 +26,63 @@ where
 {
     pub fn new(
         thread_count: usize,
+        batch_count: usize,
+        data: Vec<T>,
         job: Arc<J>,
     ) -> Self {
         let (worker_tx, collector) = channel();
         let mut workers = Vec::with_capacity(thread_count);
-        for i in 0..thread_count {
-            let worker = Arc::new(Worker::new(i, &job, &worker_tx));
+        let mut batches = Batcher::new(data).create_batches(batch_count);
+        let mut work_pool = WorkPool::new(thread_count, batches);
+        for (idx, queue) in work_pool.pool.iter().enumerate() {
+            let queue = Arc::clone(&queue);
+            let worker = Arc::new(Worker::new(idx, &job, queue, &worker_tx));
             workers.push(worker);
         }
-        Self { workers, collector }
-    }
-
-    pub fn try_dispatch(&self, batch: Batch<T>) -> DispatchResult<T> {
-        for worker in &self.workers {
-            let mut work = worker.work.lock().unwrap();
-            match &*work {
-                Work::Awaiting => {
-                    *work = Work::Delegated(batch);
-                    return DispatchResult::Dispatched;
-                }
-                _ => {}
-            }
+        Self {
+            thread_count,
+            batch_count,
+            work_pool,
+            workers,
+            collector
         }
-        return DispatchResult::AllWorkersBusy(batch);
     }
 
-    pub fn execute(&self, data: Vec<T>, batch_count: usize) {
+    pub fn execute(&self) {
         for worker in &self.workers {
             let worker = Arc::clone(&worker);
             thread::spawn(move || {
                 worker.run();
             });
         }
-        let mut batches = Batcher::new(data).create_batches(batch_count);
-        while let Some(batch) = batches.pop_front() {
-            match self.try_dispatch(batch) {
-                DispatchResult::Dispatched => {}
-                DispatchResult::AllWorkersBusy(batch) => {
-                    batches.push_back(batch);
-                    thread::sleep(std::time::Duration::from_millis(10));
-                }
-            } 
-        }
+//        while self.work_pool.has_work() {
+//        }
     }
 
-    pub fn join(&self, batch_count: usize) -> Vec<U> {
-        let mut result: Vec<Batch<U>> = Vec::with_capacity(batch_count);
-        for _ in 0..batch_count {
+    pub fn join(&self) -> Vec<U> {
+        let mut result: Vec<Batch<U>> = Vec::with_capacity(self.batch_count);
+        for _ in 0..self.batch_count {
             let output_batch = self.collector.recv().unwrap();
             result.push(output_batch);
         }
         for worker in &self.workers {
-            let mut work = worker.work.lock().unwrap();
-            *work = Work::Completed;
+            let mut status = worker.status.write().unwrap();
+            *status = WorkStatus::Completed;
         }
         result.sort_by_key(|b| b.id);
         result.into_iter().flat_map(|b| b.into_iter()).collect()
     }
 }
 
+pub enum WorkStatus {
+    Working,
+    Completed,
+}
+
 pub struct Worker<T, U, J> {
     id: usize,
     job: Arc<J>,
+    status: Arc<RwLock<WorkStatus>>,
     work: Arc<RwLock<WorkQueue<T>>>,
     output: Sender<Batch<U>>,
 }
@@ -96,20 +96,20 @@ where
     pub fn new(
         id: usize,
         job: &Arc<J>,
+        work: Arc<RwLock<WorkQueue<T>>>,
         outgoing: &Sender<Batch<U>>,
     ) -> Self {
         Self {
             id: id,
             job: Arc::clone(job),
-            work: Arc::new(Mutex::new(Work::Awaiting)),
+            status: Arc::new(RwLock::new(WorkStatus::Working)),
+            work,
             output: outgoing.clone(),
         }
     }
 
     pub fn get_work(&self) -> Option<Batch<T>> {
-        let work = self.work.write().unwrap();
-        let batch = work.pop();
-        batch
+        self.work.write().unwrap().pop()
     }
 
     pub fn process_batch(&self, input_batch: &Batch<T>) -> Batch<U> {
@@ -124,8 +124,8 @@ where
     pub fn run(&self) {
         loop {
             if let Some(batch) = self.get_work() {
-                let output_batch = process_batch(&batch);
-                output.send(output_batch);
+                let output_batch = self.process_batch(&batch);
+                let _ = self.output.send(output_batch);
             }
         }
     }
@@ -204,6 +204,14 @@ pub struct WorkQueue<T> {
 }
 
 impl<T> WorkQueue<T> {
+    pub fn empty() -> Self {
+        Self {
+            id: 999,
+            items: 0,
+            work: VecDeque::new(),
+        }
+    }
+
     pub fn new(id: usize, batches: Vec<Batch<T>>) -> Self {
         Self {
             id: id,
@@ -230,7 +238,7 @@ pub struct WorkPool<T> {
 }
 
 impl<T> WorkPool<T> {
-    pub fn new(worker_count: usize, batches: &mut VecDeque<Batch<T>>) -> Self {
+    pub fn new(worker_count: usize, mut batches: VecDeque<Batch<T>>) -> Self {
         let batch_count = batches.len() / worker_count;
         let mut pool = Vec::with_capacity(worker_count);
         for i in 0..worker_count {
@@ -278,6 +286,18 @@ impl<T> WorkPool<T> {
             }
         }
         greatest_idx
+    }
+
+    pub fn has_work(&self) -> bool {
+        let mut has_work = false;
+        for queue in &self.pool {
+            let queue = queue.read().unwrap();
+            if queue.items > 0 {
+                has_work = true;
+                break;
+            }
+        }
+        has_work
     }
 }
 
