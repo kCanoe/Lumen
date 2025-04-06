@@ -1,4 +1,5 @@
-// a ring buffer that will be the underlying data struture for the deque
+use std::sync::atomic::AtomicUsize;
+
 struct RingBuffer<T, const C: usize> {
     buff: [T; C],
     capacity: usize,
@@ -32,8 +33,8 @@ where
 }
 
 pub struct Deque<T, const C: usize> {
-    top: usize,
-    bottom: usize,
+    top: AtomicUsize,
+    bottom: AtomicUsize, 
     buffer: RingBuffer<T, C>,
 }
 
@@ -43,8 +44,8 @@ where
 {
     pub fn new() -> Self {
         Self {
-            top: 0,
-            bottom: 0,
+            top: AtomicUsize::new(0),
+            bottom: AtomicUsize::new(0),
             buffer: RingBuffer::<T, C>::new(),
         }
     }
