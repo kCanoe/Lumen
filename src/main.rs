@@ -25,12 +25,12 @@ fn setup() -> (Camera, ObjectList, usize, usize) {
     let objects = make_cube_array();
 
     let camera = CameraBuilder::new()
-        .resolution(4095, 2304)
+        .resolution(1024, 576)
         .vfov(90.0)
         .target(6.0, 0.0, 6.0)
         .position(8.0, 8.0, 8.0)
         .upward(0.0, 1.0, 0.0)
-        .samples(1)
+        .samples(100)
         .max_depth(10)
         .build();
 
