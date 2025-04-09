@@ -6,17 +6,15 @@ use std::collections::VecDeque;
 use super::batches::{WorkBatch, OutputBatch, Batcher};
 use super::workpool::{WorkQueue, WorkPool};
 
-use std::marker::PhantomData;
-
 pub trait Job<T, U> {
     fn run(&self, input: &T) -> U;
 }
 
-pub struct Manager<T, U, J, Q: WorkQueue<T>> {
+pub struct Manager<T, U, J, Q> {
     thread_count: usize,
     batch_count: usize,
     workers: Vec<Arc<Worker<T, U, J, Q>>>,
-    work_pool: WorkPool<T, Q>,
+    work_pool: WorkPool<T>,
     collector: Receiver<OutputBatch<U>>,
 }
 
@@ -25,7 +23,6 @@ where
     T: Send + Sync + 'static,
     U: Send + Sync + 'static,
     J: Job<T, U> + Send + Sync + 'static,
-    Q: WorkQueue<T> + Send + Sync + 'static,
 {
     pub fn new(
         thread_count: usize,
@@ -46,7 +43,7 @@ where
             batch_count,
             work_pool,
             workers,
-            collector,
+            collector
         }
     }
 
@@ -79,27 +76,25 @@ enum WorkStatus {
     Completed,
 }
 
-struct Worker<T, U, J, Q> {
+struct Worker<T, U, J> {
     id: usize,
     job: Arc<J>,
     status: Arc<RwLock<WorkStatus>>,
-    work: Arc<RwLock<Q>>,
-    output: Sender<OutputBatch<U>>,
-    _phantom: PhantomData<T>,
+    work: Arc<RwLock<WorkQueue<T>>>,
+    output: Sender<Batch<U>>,
 }
 
-impl<T, U, J, Q> Worker<T, U, J, Q>
+impl<T, U, J> Worker<T, U, J>
 where
     T: Send + Sync + 'static,
     U: Send + Sync + 'static,
     J: Job<T, U> + Send + Sync + 'static,
-    Q: WorkQueue<T>,
 {
     pub fn new(
         id: usize,
         job: &Arc<J>,
-        work_queue: &Arc<RwLock<Q>>,
-        outgoing: &Sender<OutputBatch<U>>,
+        work_queue: &Arc<RwLock<WorkQueue<T>>>,
+        outgoing: &Sender<Batch<U>>,
     ) -> Self {
         Self {
             id: id,
@@ -107,17 +102,16 @@ where
             status: Arc::new(RwLock::new(WorkStatus::Working)),
             work: Arc::clone(work_queue),
             output: outgoing.clone(),
-            _phantom: PhantomData,
         }
     }
 
-    pub fn get_work(&self) -> Option<WorkBatch<T>> {
+    pub fn get_work(&self) -> Option<Batch<T>> {
         self.work.write().unwrap().pop()
     }
 
-    pub fn process_batch(&self, input_batch: &WorkBatch<T>) -> OutputBatch<U> {
-        let mut output_batch = OutputBatch::new(input_batch.id);
-        for item in &input_batch.items {
+    pub fn process_batch(&self, input_batch: &Batch<T>) -> Batch<U> {
+        let mut output_batch = Batch::new(input_batch.id);
+        for item in input_batch {
             let output_item = self.job.run(&item); 
             output_batch.items.push(output_item);
         }

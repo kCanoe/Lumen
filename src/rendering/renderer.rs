@@ -6,6 +6,7 @@ use crate::objects::*;
 
 use crate::runtime::Job;
 use crate::runtime::Manager;
+use crate::runtime::workpool::BaseQueue;
 
 use super::image::*;
 use super::Camera;
@@ -48,7 +49,12 @@ impl Renderer {
                 indexes.push(idx);
             }
         }
-        let manager = Manager::new(self.thread_count, 256, indexes, rendering);
+        let manager: Manager::<
+            (usize, usize),
+            Pixel,
+            PixelRenderer,
+            BaseQueue<(usize, usize)>
+        > = Manager::new(self.thread_count, 256, indexes, rendering);
         manager.execute();
         let mut result = Image::new(w, h);
         result.data = manager.join();

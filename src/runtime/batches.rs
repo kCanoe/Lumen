@@ -1,22 +1,33 @@
+use std::sync::Arc;
 use std::collections::VecDeque;
 
-pub struct Batch<T> {
+pub struct WorkBatch<T> {
     pub id: usize,
     pub items: Vec<T>,
 }
 
-impl<T> Batch<T> {
+pub struct OutputBatch<T> {
+    pub id: usize,
+    pub items: Vec<T>,
+}
+
+impl<T> WorkBatch<T> {
+    pub fn new(id: usize, items: Vec<T>) -> Self {
+        Self {
+            id,
+            items,
+        } 
+    }
+}
+
+impl<T> OutputBatch<T> {
     pub fn new(id: usize) -> Self {
         let items = Vec::new();
         Self { id, items }
     }
-
-    pub fn from_vec(id: usize, items: Vec<T>) -> Self {
-        Self { id, items }
-    }
 }
 
-impl<T> IntoIterator for Batch<T> {
+impl<T> IntoIterator for OutputBatch<T> {
     type Item = T;
     type IntoIter = std::vec::IntoIter<T>;
 
@@ -25,7 +36,7 @@ impl<T> IntoIterator for Batch<T> {
     }
 }
 
-impl<'a, T> IntoIterator for &'a Batch<T> {
+impl<'a, T> IntoIterator for &'a OutputBatch<T> {
     type Item = &'a T;
     type IntoIter = std::slice::Iter<'a, T>;
 
@@ -34,7 +45,7 @@ impl<'a, T> IntoIterator for &'a Batch<T> {
     }
 }
 
-impl<'a, T> IntoIterator for &'a mut Batch<T> {
+impl<'a, T> IntoIterator for &'a mut OutputBatch<T> {
     type Item = &'a mut T;
     type IntoIter = std::slice::IterMut<'a, T>;
 
@@ -42,7 +53,6 @@ impl<'a, T> IntoIterator for &'a mut Batch<T> {
         self.items.iter_mut()
     }
 }
-
 
 pub struct Batcher<T> {
     items: Vec<T>,
@@ -53,13 +63,16 @@ impl<T> Batcher<T> {
         Self { items }
     }
 
-    pub fn create_batches(&mut self, batch_count: usize) -> VecDeque<Batch<T>> {
+    pub fn create_batches(
+        &mut self,
+        batch_count: usize
+    ) -> VecDeque<WorkBatch<T>> {
         assert!(self.items.len() % batch_count == 0);
         let batch_size = self.items.len() / batch_count;
         let mut work_batches = VecDeque::with_capacity(batch_count);
         for i in 0..batch_count {
-            let batch: Vec<T> = self.items.drain(..batch_size).collect();
-            let batch = Batch::from_vec(i, batch);
+            let batch = self.items.drain(..batch_size).collect();
+            let batch = WorkBatch::new(i, batch);
             work_batches.push_back(batch);
         }
         work_batches
