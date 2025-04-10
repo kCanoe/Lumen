@@ -1,17 +1,9 @@
 use std::sync::{Arc, RwLock};
 use std::collections::VecDeque;
 use std::marker::PhantomData;
+
 use super::batches::WorkBatch;
-
-pub trait WorkQueue<T> {
-    fn new(id: usize, batches: Vec<WorkBatch<T>>) -> Self;
-
-    fn empty(&self) -> bool;
-
-    fn push(&mut self, batch: WorkBatch<T>);
-
-    fn pop(&mut self) -> Option<WorkBatch<T>>;
-}
+use super::WorkQueue;
 
 pub struct BaseQueue<T> {
     pub id: usize,

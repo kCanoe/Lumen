@@ -7,6 +7,7 @@ use crate::objects::*;
 use crate::runtime::Job;
 use crate::runtime::Manager;
 use crate::runtime::workpool::BaseQueue;
+use crate::runtime::WorkConfig;
 
 use super::image::*;
 use super::Camera;
@@ -14,8 +15,6 @@ use super::Camera;
 pub struct Renderer {
     camera: Arc<Camera>,
     objects: Arc<ObjectList>,
-    thread_count: usize,
-    batch_count: usize,
 }
 
 struct PixelRenderer {
@@ -23,18 +22,26 @@ struct PixelRenderer {
     cam: Arc<Camera>,
 }
 
+struct RendererWorkConfig;
+
+impl WorkConfig for RendererWorkConfig {
+    const THREAD_COUNT: usize = 8;
+    const BATCH_COUNT: usize = 512;
+
+    type Input = (usize, usize);
+    type Output = Pixel;
+    type Job = PixelRenderer; 
+    type Queue = BaseQueue<(usize, usize)>; 
+}
+
 impl Renderer {
     pub fn new(
         camera: Camera,
         objects: ObjectList,
-        thread_count: usize,
-        batch_count: usize,
         ) -> Self {
         Self {
             camera: Arc::new(camera),
             objects: Arc::new(objects),
-            thread_count,
-            batch_count,
         }
     }
 
@@ -49,16 +56,18 @@ impl Renderer {
                 indexes.push(idx);
             }
         }
-        let manager: Manager::<
-            (usize, usize),
-            Pixel,
-            PixelRenderer,
-            BaseQueue<(usize, usize)>
-        > = Manager::new(self.thread_count, 256, indexes, rendering);
+        let manager = Manager::<RendererWorkConfig>::new(&rendering, indexes);
         manager.execute();
         let mut result = Image::new(w, h);
         result.data = manager.join();
         result
+    }
+}
+
+impl Job<(usize, usize), Pixel> for PixelRenderer {
+    fn run(&self, pixel_index: &(usize, usize)) -> Pixel {
+        let (i, j) = *pixel_index;
+        self.render_pixel(i, j)
     }
 }
 
@@ -126,10 +135,4 @@ impl PixelRenderer {
     }
 }
 
-impl Job<(usize, usize), Pixel> for PixelRenderer {
-    fn run(&self, pixel_index: &(usize, usize)) -> Pixel {
-        let (i, j) = *pixel_index;
-        self.render_pixel(i, j)
-    }
-}
 

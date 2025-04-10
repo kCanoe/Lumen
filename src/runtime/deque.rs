@@ -1,11 +1,15 @@
 use std::sync::atomic::AtomicUsize;
 
+// lint macro used to suppress warnings while working on other changes
+
+#[allow(dead_code)]
 struct RingBuffer<T, const C: usize> {
     buff: [T; C],
     capacity: usize,
     mask: usize,
 }
 
+#[allow(dead_code)]
 impl<T, const C: usize> RingBuffer<T, C>
 where
     T: Sized + Default + Clone + Copy,
@@ -32,6 +36,7 @@ where
     }
 }
 
+#[allow(dead_code)]
 pub struct Deque<T, const C: usize> {
     top: AtomicUsize,
     bottom: AtomicUsize, 

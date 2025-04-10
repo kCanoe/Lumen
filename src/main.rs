@@ -21,9 +21,12 @@ fn make_cube_array() -> ObjectList {
     objects
 }
 
-fn setup() -> (Camera, ObjectList, usize, usize) {
-    let objects = make_cube_array();
+fn main() -> std::io::Result<()> {
+    let args: Vec<String> = env::args().collect();
+    let output_path = PathBuf::from(args[1].as_str());
+    let mut output = File::create(output_path)?;
 
+    let objects = make_cube_array();
     let camera = CameraBuilder::new()
         .resolution(1024, 576)
         .vfov(90.0)
@@ -34,16 +37,7 @@ fn setup() -> (Camera, ObjectList, usize, usize) {
         .max_depth(10)
         .build();
 
-    (camera, objects, 8, 256)
-}
-
-fn main() -> std::io::Result<()> {
-    let args: Vec<String> = env::args().collect();
-    let output_path = PathBuf::from(args[1].as_str());
-    let mut output = File::create(output_path)?;
-
-    let (camera, objects, thread_count, batch_count) = setup();
-    let renderer = Renderer::new(camera, objects, thread_count, batch_count);
+    let renderer = Renderer::new(camera, objects);
     let image = renderer.render();
 
     let output_text = format!("{image}");
